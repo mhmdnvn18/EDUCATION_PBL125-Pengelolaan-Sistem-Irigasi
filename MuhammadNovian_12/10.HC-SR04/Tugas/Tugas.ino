@@ -51,10 +51,12 @@ void loop() {
   // Hitung jarak (cm)
   jarak = durasi * 0.034 / 2;
 
-  lcd.setCursor(2, 0);   // Or setting the cursor in the desired position.
+  lcd.setCursor(0, 0);   // Or setting the cursor in the desired position.
   lcd.print("Jarak: ");  // You can make spaces using well... spaces
-  lcd.setCursor(8, 0);   // Or setting the cursor in the desired position.
+  lcd.setCursor(9, 0);   // Or setting the cursor in the desired position.
   lcd.print(jarak);      // You can make spaces using well... spaces
+  lcd.print("cm");
+  lcd.setCursor(13, 0);
 
   if (jarak > 50) {
     digitalWrite(led_1, 1);
@@ -62,13 +64,9 @@ void loop() {
     digitalWrite(led_3, 0);
     digitalWrite(led_4, 0);
 
-    lcd.setCursor(5, 1);  // Or setting the cursor in the desired position.
-    lcd.print("AMAN");    // You can make spaces using well... spaces
+    lcd.setCursor(0, 1);            // Or setting the cursor in the desired position.
+    lcd.print("      AMAN      ");  // You can make spaces using well... spaces
     delay(500);
-
-    lcd.backlight();
-    lcd.clear();
-    delay(100);
 
   } else if (jarak >= 10 && jarak <= 30) {
     digitalWrite(led_1, 1);
@@ -76,13 +74,9 @@ void loop() {
     digitalWrite(led_3, 0);
     digitalWrite(led_4, 0);
 
-    lcd.setCursor(1, 1);  // Or setting the cursor in the desired position.
-    lcd.print("Hati - Hati");
+    lcd.setCursor(0, 1);  // Or setting the cursor in the desired position.
+    lcd.print("   Hati-Hati    ");
     delay(500);
-
-    lcd.backlight();
-    lcd.clear();
-    delay(100);
 
   } else if (jarak < 10) {
     digitalWrite(led_1, 1);
@@ -90,8 +84,8 @@ void loop() {
     digitalWrite(led_3, 1);
     digitalWrite(led_4, 1);
 
-    lcd.setCursor(4, 1);   // Or setting the cursor in the desired position.
-    lcd.print("STOP !!");  // You can make spaces using well... spaces
+    lcd.setCursor(0, 1);           // Or setting the cursor in the desired position.
+    lcd.print("    STOP !!    ");  // You can make spaces using well... spaces
     digitalWrite(Buzzer, 1);
     delay(500);
     digitalWrite(Buzzer, 0);
