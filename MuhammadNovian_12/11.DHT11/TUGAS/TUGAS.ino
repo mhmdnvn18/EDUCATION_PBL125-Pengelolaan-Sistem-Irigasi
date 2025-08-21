@@ -54,16 +54,19 @@ void loop() {
   // Compute heat index in Celsius (isFahreheit = false)
   float hic = dht.computeHeatIndex(t, h, false);
 
-  lcd.setCursor(0, 0);  
-  lcd.print("H:");      
-  lcd.setCursor(2, 0);  
-  lcd.print(h, 1);      
+  lcd.setCursor(0, 0);
+  lcd.print("H:");
+  lcd.setCursor(2, 0);
+  lcd.print(h, 1);
+  lcd.setCursor(6, 0);
+  lcd.print((char)223);
+
   lcd.setCursor(9, 0);
   lcd.print("T:");
   lcd.setCursor(11, 0);
-  lcd.print(t, 1);  
+  lcd.print(t, 1);
   lcd.setCursor(15, 0);
-  lcd.print("O");  
+  lcd.print("C");
 
   if (t < 25) {
     digitalWrite(led_1, 1);
