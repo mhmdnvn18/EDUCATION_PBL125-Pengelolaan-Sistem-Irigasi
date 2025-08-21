@@ -8,6 +8,8 @@
 #define Buzzer 4
 #define DHTTYPE DHT11  // DHT 22  (AM2302), AM2321
 
+#define relayPin 2
+
 LCD_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -20,6 +22,8 @@ void setup() {
   pinMode(led_1, OUTPUT);
   pinMode(led_2, OUTPUT);
   pinMode(led_3, OUTPUT);
+
+  pinMode(relayPin, OUTPUT);
 
   lcd.begin();
   lcd.backlight();
@@ -94,6 +98,7 @@ void loop() {
     lcd.setCursor(0, 1);           // Or setting the cursor in the desired position.
     lcd.print("   POMPA OFF   ");  // You can make spaces using well... spaces
     digitalWrite(Buzzer, 0);
+    digitalWrite(relayPin, 1);
     delay(500);
   }
 }
