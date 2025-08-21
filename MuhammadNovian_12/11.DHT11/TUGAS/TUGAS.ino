@@ -92,6 +92,7 @@ void loop() {
     lcd.setCursor(0, 1);           // Or setting the cursor in the desired position.
     lcd.print("   POMPA ON    ");  // You can make spaces using well... spaces
     digitalWrite(Buzzer, 1);
+    digitalWrite(relayPin, 0);
     delay(500);
 
   } else if (h > 60) {
