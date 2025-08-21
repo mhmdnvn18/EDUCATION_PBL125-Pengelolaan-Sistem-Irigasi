@@ -16,14 +16,7 @@ void loop()
     lcd.print("World!");
     delay(500);
 
-    // Flashing the backlight
-    for (int i = 0; i < 5; ++i)
-    {
-        lcd.backlight();
-        delay(50);
-        lcd.noBacklight();
-        delay(50);
-    }
+
 
     lcd.backlight();
     lcd.clear();

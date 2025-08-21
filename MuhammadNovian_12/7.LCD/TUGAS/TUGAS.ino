@@ -1,10 +1,13 @@
 #include <LCD_I2C.h>
 
+#define Buzzer 4
+
 LCD_I2C lcd(0x27, 16, 2);  // Default address of most PCF8574 modules, change according
 
 void setup() {
   lcd.begin();  // If you are using more I2C devices using the Wire library use lcd.begin(false)
   lcd.backlight();
+  pinMode(Buzzer, OUTPUT);
 }
 
 void loop() {
