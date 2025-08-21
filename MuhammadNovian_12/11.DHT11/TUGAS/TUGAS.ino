@@ -88,13 +88,13 @@ void loop() {
     digitalWrite(led_2, 0);
     digitalWrite(led_3, 1);
   }
-  if (h < 50) {
+  if (h < 60) {
     lcd.setCursor(0, 1);           // Or setting the cursor in the desired position.
     lcd.print("   POMPA ON    ");  // You can make spaces using well... spaces
     digitalWrite(Buzzer, 1);
     delay(500);
 
-  } else if (h > 50) {
+  } else if (h > 60) {
     lcd.setCursor(0, 1);           // Or setting the cursor in the desired position.
     lcd.print("   POMPA OFF   ");  // You can make spaces using well... spaces
     digitalWrite(Buzzer, 0);
