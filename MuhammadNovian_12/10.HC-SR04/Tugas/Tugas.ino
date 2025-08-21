@@ -51,9 +51,9 @@ void loop() {
   // Hitung jarak (cm)
   jarak = durasi * 0.034 / 2;
 
-  lcd.setCursor(0, 0);   // Or setting the cursor in the desired position.
+  lcd.setCursor(2, 0);   // Or setting the cursor in the desired position.
   lcd.print("Jarak: ");  // You can make spaces using well... spaces
-  lcd.setCursor(8, 1);   // Or setting the cursor in the desired position.
+  lcd.setCursor(8, 0);   // Or setting the cursor in the desired position.
   lcd.print(jarak);      // You can make spaces using well... spaces
 
   if (jarak > 50) {
@@ -62,7 +62,7 @@ void loop() {
     digitalWrite(led_3, 0);
     digitalWrite(led_4, 0);
 
-    lcd.setCursor(5, 0);  // Or setting the cursor in the desired position.
+    lcd.setCursor(5, 1);  // Or setting the cursor in the desired position.
     lcd.print("AMAN");    // You can make spaces using well... spaces
     delay(500);
 
