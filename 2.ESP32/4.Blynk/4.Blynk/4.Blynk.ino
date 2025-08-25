@@ -55,8 +55,6 @@ void loop() {
 
   delay(2000);
 
-  // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht.readHumidity();
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
@@ -89,6 +87,6 @@ void loop() {
   lcd.print("C");
 
 
-  Blynk.virtualWrite(V1, Suhu);
-  Blynk.virtualWrite(V0, Kelembaban);
+  Blynk.virtualWrite(V1, t);
+  Blynk.virtualWrite(V0, h);
 }
