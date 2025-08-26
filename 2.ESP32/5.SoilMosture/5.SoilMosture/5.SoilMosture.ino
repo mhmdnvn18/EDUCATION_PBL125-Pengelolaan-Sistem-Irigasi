@@ -39,11 +39,11 @@ void loop() {
   lcd.print(kelembaban, 1);
 
   if (kelembaban < 10) {
-    digitalWrite(relayPin, 1);
+    digitalWrite(relayPin, 0);
     Serial.println("NYALA");
   } else {
     (kelembaban > 10);
-    digitalWrite(relayPin, 0);
+    digitalWrite(relayPin, 1);
     Serial.println("MATI");
   }
 }
