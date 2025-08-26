@@ -36,13 +36,15 @@ void bacaSensor() {
   lcd.print(kelembaban, 1);
   lcd.print("%   ");
 
-  if (kelembaban < 10) {
+  if (kelembaban < 50) {
     digitalWrite(relayPin, LOW);  // active LOW
     Serial.println("NYALA");
-  } else {
-    digitalWrite(relayPin, HIGH);
-    Serial.println("MATI");
   }
+  
+  else(kelembaban > 65); {
+      digitalWrite(relayPin, HIGH);
+      Serial.println("MATI");
+    }
 }
 
 void setup() {
