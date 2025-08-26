@@ -1,6 +1,8 @@
 #include <LCD_I2C.h>
+
 LCD_I2C lcd(0x27, 16, 2);
 
+#define relayPin 4
 
 #define sensorPin 34  // Pin analog ESP32 (misalnya GPIO 34)
 void setup() {
@@ -14,6 +16,8 @@ void setup() {
   lcd.print(" BPVP Surakarta ");
   delay(2000);
   lcd.clear();
+
+  pinMode(relayPin, OUTPUT);
 }
 void loop() {
   int sensorValue = analogRead(sensorPin);  // Baca nilai analog dari sensor (0 - 4095)
@@ -29,8 +33,17 @@ void loop() {
   Serial.println(" %");
   delay(1000);  // Tunggu 1 detik sebelum pembacaan berikutnya
 
-  lcd.setCursor(0, 0);
+  lcd.setCursor(2, 0);
   lcd.print("KELEMBABAN:");
   lcd.setCursor(5, 1);
   lcd.print(kelembaban, 1);
+
+  if (kelembaban < 10) {
+    digitalWrite(relayPin, 1);
+    Serial.println("NYALA");
+  } else {
+    (kelembaban > 10);
+    digitalWrite(relayPin, 0);
+    Serial.println("MATI");
+  }
 }
