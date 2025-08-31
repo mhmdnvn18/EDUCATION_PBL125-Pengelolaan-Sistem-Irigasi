@@ -20,7 +20,7 @@ BlynkTimer timer;
 
 void bacaSensor() {
   int sensorValue = analogRead(sensorPin);
-  float kelembaban = map(sensorValue, 0, 4095, 100, 0);
+  float kelembaban = map(sensorValue, 3500, 1600, 0, 100);
 
   Blynk.virtualWrite(V0, kelembaban);
 
@@ -37,12 +37,12 @@ void bacaSensor() {
   lcd.print("%   ");
 
   if (kelembaban < 50) {
-    digitalWrite(relayPin, LOW);  // active LOW
+    digitalWrite(relayPin, 0);  // active LOW
     Serial.println("NYALA");
   }
   
-  else(kelembaban > 65); {
-      digitalWrite(relayPin, HIGH);
+  else if (kelembaban > 65); {
+      digitalWrite(relayPin, 1);
       Serial.println("MATI");
     }
 }
