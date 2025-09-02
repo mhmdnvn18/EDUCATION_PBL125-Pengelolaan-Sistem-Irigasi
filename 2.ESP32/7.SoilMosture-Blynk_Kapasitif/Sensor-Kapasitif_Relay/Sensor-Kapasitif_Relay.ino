@@ -17,6 +17,7 @@ char pass[] = "12345678";
 #define sensorPin 34  // ADC pin
 #define relayPin 4    // GPIO relay
 bool pompaStatus = false;
+
 void setup() {
   Serial.begin(115200);
   pinMode(relayPin, OUTPUT);
@@ -40,32 +41,33 @@ void loop() {
   if (kelembaban > 100) kelembaban = 100;
 
   Blynk.virtualWrite(V0, kelembaban);
+  Blynk.virtualWrite(V1, pompaStatus ? "ON" : "OFF");
 
   // Logika otomatisasi
-  if (kelembaban < 50) {  // Jika <50% ³ Nyalakan pompa
-    digitalWrite(relayPin, HIGH);
-    pompaStatus = true;
+  if (kelembaban < 45) {
     digitalWrite(relayPin, 0);
+    pompaStatus = true;
 
-  } else if (kelembaban >= 65) {  // Jika sudah >=65% ³ Matikan pompa
-    digitalWrite(relayPin, LOW);
-    pompaStatus = false;
+  } else if (kelembaban >= 65) {
     digitalWrite(relayPin, 1);
+    pompaStatus = false;
   }
 
+// Dari file yang sudah diperbaiki:
+  lcd.setCursor(0, 0);
+  lcd.print("Soil: ");
+  lcd.print(kelembaban);
+  lcd.print("%   "); // Beri spasi untuk membersihkan karakter sisa
+
+  lcd.setCursor(0, 1);
+  lcd.print("Pump:           ");
+  lcd.setCursor(6, 1);
+  lcd.print(pompaStatus ? "ON" : "OFF");
 
 
   Serial.print("Kelembaban: ");
   Serial.print(kelembaban);
   Serial.println(" %");
-
-  lcd.setCursor(2, 0);
-  lcd.print("KELEMBABAN:   ");
-  lcd.setCursor(5, 1);
-  lcd.print(kelembaban, 1);
-  lcd.print("%   ");
-
-
   Serial.print("Pompa: ");
   Serial.println(pompaStatus ? "ON" : "OFF");
   delay(2000);
