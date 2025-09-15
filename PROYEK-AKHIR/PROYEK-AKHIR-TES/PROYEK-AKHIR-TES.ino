@@ -1,13 +1,10 @@
-#include <Wire.h>
-#include <LCD_I2C.h>
 
-LCD_I2C lcd(0x27, 16, 2);
 
 // ====== Pin assignment ======
 #define sensor1 32
 #define sensor2 33
-#define relay1 18
-#define relay2 19
+#define relay1 4
+#define relay2 5
 
 // Relay aktif-LOW? (umum pada modul relay)
 const bool RELAY_ACTIVE_LOW = false;
@@ -112,15 +109,6 @@ void setup() {
   setRelay(relay1, false);
   setRelay(relay2, false);
 
-  Wire.begin();
-  lcd.begin();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("SoilMoisture");
-  lcd.setCursor(0, 1);
-  lcd.print("BPVP Surakarta");
-  delay(1500);
-  lcd.clear();
 
 #if defined(ESP32)
   // Stabilkan pembacaan ADC (range 0..3.3V)
@@ -154,19 +142,6 @@ void loop() {
       pompa2Status = false; setRelay(relay2, false);
     }
   }
-
-  // LCD sederhana
-  lcd.setCursor(0, 0);
-  lcd.print("K1:");
-  lcd.print((int)kelembaban1);
-  lcd.print("% ");
-  lcd.print(pompa1Status ? "ON " : "OFF");
-
-  lcd.setCursor(0, 1);
-  lcd.print("K2:");
-  lcd.print((int)kelembaban2);
-  lcd.print("% ");
-  lcd.print(pompa2Status ? "ON " : "OFF");
 
   // Tangani perintah dari Serial Monitor
   handleSerial();

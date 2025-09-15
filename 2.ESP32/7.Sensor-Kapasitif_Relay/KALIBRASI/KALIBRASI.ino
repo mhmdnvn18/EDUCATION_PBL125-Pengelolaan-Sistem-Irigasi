@@ -4,7 +4,7 @@ void setup() {
 }
 void loop() {
   int adcValue = analogRead(sensorPin);  // 0 - 4095
-  float kelembaban = map(adcValue, 3500, 1600, 0, 100);
+  float kelembaban = map(adcValue, 3000, 1000, 0, 100);
   // 3900 = kering, 1500 = basah (butuh kalibrasi nyata)
   if (kelembaban < 0) kelembaban = 0;
   if (kelembaban > 100) kelembaban = 100;
