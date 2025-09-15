@@ -2,11 +2,11 @@
 #include <LCD_I2C.h>
 #include <WiFi.h>
 #include <WebServer.h>
-#include <Preferences.h> // <-- Pustaka BARU untuk menyimpan pengaturan
+#include <Preferences.h>
 #include "webpage.h"
 
 LCD_I2C lcd(0x27, 16, 2);
-Preferences preferences; // <-- Objek BARU untuk mengakses memori
+Preferences preferences;
 
 // ====== Konfigurasi Jaringan & IP Statis ======
 const char* ssid = "KontrolPompaESP32";
@@ -29,20 +29,17 @@ IPAddress subnet(255, 255, 255, 0);
 const int ADC_DISCONNECTED_THRESHOLD = 4000;
 const bool RELAY_ACTIVE_LOW = false;
 
-// Histeresis sekarang menjadi variabel, bukan konstanta
-float onThreshold = 40.0;  // <-- Diperbarui
-float offThreshold = 65.0; // <-- Diperbarui
+float onThreshold = 40.0;
+float offThreshold = 65.0;
 
-// Variabel status
 bool pompaStatus = false;
 bool lampu1Status = false;
 bool lampu2Status = false;
 bool autoModeAir = true;
 
-// Variabel lainnya
 WebServer server(80);
 unsigned long lastLcdSwitch = 0;
-int lcdPage = 0; // Ganti dari bool ke int untuk siklus > 2
+int lcdPage = 0;
 
 void setRelay(uint8_t pin, bool on) {
   if (RELAY_ACTIVE_LOW) {
@@ -58,12 +55,10 @@ void setWaterSystem(bool on) {
   setRelay(relay2, on);
 }
 
-// ====== FUNGSI KALIBRASI DIPERBARUI ======
 float getMoisture(int pin) {
   int adc = analogRead(pin);
   if (adc > ADC_DISCONNECTED_THRESHOLD) return -1.0f;
-  // Kalibrasi diubah sesuai permintaan
-  long pct = map(adc, 3000, 1000, 0, 100); 
+  long pct = map(adc, 3000, 1000, 0, 100);
   if (pct < 0) pct = 0;
   if (pct > 100) pct = 100;
   return (float)pct;
@@ -73,10 +68,8 @@ float getMoisture(int pin) {
 void setup() {
   Serial.begin(115200);
 
-  // --- Memuat pengaturan dari memori ---
-  preferences.begin("settings", false); // Buka namespace "settings"
-  // Nilai default diperbarui di sini juga
-  onThreshold = preferences.getFloat("on_thresh", 40.0); 
+  preferences.begin("settings", false);
+  onThreshold = preferences.getFloat("on_thresh", 40.0);
   offThreshold = preferences.getFloat("off_thresh", 65.0);
   preferences.end();
   Serial.println("Pengaturan ambang batas dimuat.");
@@ -99,7 +92,7 @@ void setup() {
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: "); Serial.println(IP);
 
-  lcd.clear(); // Cukup bersihkan layar sekali, loop akan mengambil alih
+  lcd.clear();
 
   // === Rute Web ===
   server.on("/", HTTP_GET, []() {
@@ -124,24 +117,18 @@ void setup() {
     server.send(200, "application/json", json);
   });
 
-  // Rute kontrol
   server.on("/water", HTTP_POST, []() { autoModeAir = false; setWaterSystem(server.arg("state") == "on"); server.send(200); });
   server.on("/auto",  HTTP_POST, []() { autoModeAir = (server.arg("state") == "on"); server.send(200); });
   server.on("/lamp1", HTTP_POST, []() { lampu1Status = (server.arg("state") == "on"); setRelay(relay3, lampu1Status); server.send(200); });
   server.on("/lamp2", HTTP_POST, []() { lampu2Status = (server.arg("state") == "on"); setRelay(relay4, lampu2Status); server.send(200); });
-
-  // Rute untuk menyimpan pengaturan
   server.on("/settings", HTTP_POST, []() {
     if (server.hasArg("on") && server.hasArg("off")) {
       onThreshold = server.arg("on").toFloat();
       offThreshold = server.arg("off").toFloat();
-
       preferences.begin("settings", false);
       preferences.putFloat("on_thresh", onThreshold);
       preferences.putFloat("off_thresh", offThreshold);
       preferences.end();
-      
-      Serial.println("Pengaturan baru disimpan!");
       server.send(200, "text/plain", "OK");
     } else {
       server.send(400, "text/plain", "Bad Request");
@@ -153,36 +140,31 @@ void setup() {
 
 // ====== Loop ======
 void loop() {
-  float readings[4] = { getMoisture(sensor1), getMoisture(sensor2), getMoisture(sensor3), getMoisture(sensor4) };
+  float readings[4];
+  readings[0] = getMoisture(sensor1); delay(10);
+  readings[1] = getMoisture(sensor2); delay(10);
+  readings[2] = getMoisture(sensor3); delay(10);
+  readings[3] = getMoisture(sensor4);
 
   bool anySensorDry = false;
   bool allSensorsWet = true;
   int connectedSensors = 0;
-
   for (int i = 0; i < 4; i++) {
     if (readings[i] >= 0) {
       connectedSensors++;
-      if (readings[i] < onThreshold) {
-        anySensorDry = true;
-      }
-      if (readings[i] < offThreshold) {
-        allSensorsWet = false;
-      }
+      if (readings[i] < onThreshold) anySensorDry = true;
+      if (readings[i] < offThreshold) allSensorsWet = false;
     }
   }
 
   if (autoModeAir && connectedSensors > 0) {
-    if (!pompaStatus && anySensorDry) {
-      setWaterSystem(true);
-    } 
-    else if (pompaStatus && allSensorsWet) {
-      setWaterSystem(false);
-    }
+    if (!pompaStatus && anySensorDry) setWaterSystem(true);
+    else if (pompaStatus && allSensorsWet) setWaterSystem(false);
   }
 
-  // ====== Bagian Update LCD (Logika Baru) ======
-  if (millis() - lastLcdSwitch > 2500) { // Ganti ke 2.5 detik per tampilan
-    lcdPage = (lcdPage + 1) % 4; // Siklus 0, 1, 2, 3 untuk 4 tampilan berbeda
+  // ====== BAGIAN UPDATE LCD BARU ======
+  if (millis() - lastLcdSwitch > 3000) {
+    lcdPage = (lcdPage + 1) % 4;
     lastLcdSwitch = millis();
   }
 
@@ -191,33 +173,40 @@ void loop() {
 
   switch (lcdPage) {
     case 0: // Tampilan Sistem Air
-      if(readings[0] >= 0) sprintf(tempStr, "S1:%d%% P:%s", (int)readings[0], pompaStatus ? "ON" : "OFF");
-      else sprintf(tempStr, "Air: Tdk Aktif");
+      if (connectedSensors > 0) {
+        sprintf(tempStr, "Air:%s | %s", pompaStatus ? "ON " : "OFF", autoModeAir ? "Auto" : "Manu");
+      } else {
+        sprintf(tempStr, "Air: Tdk Aktif");
+      }
       break;
-    case 1: // Tampilan Sensor 2
-      if(readings[1] >= 0) sprintf(tempStr, "Sensor 2: %d%%", (int)readings[1]);
-      else sprintf(tempStr, "Sensor 2: --");
+    case 1: // Tampilan Lampu
+      sprintf(tempStr, "L1:%s   L2:%s",
+              lampu1Status ? "ON " : "OFF",
+              lampu2Status ? "ON " : "OFF");
       break;
-    case 2: // Tampilan Lampu 1
-      sprintf(tempStr, "Lampu 1: %s", lampu1Status ? "ON" : "OFF");
+    case 2: // Tampilan Sensor 1 & 2
+      char s1_val[4], s2_val[4];
+      (readings[0] >= 0) ? sprintf(s1_val, "%3d", (int)readings[0]) : sprintf(s1_val, " --");
+      (readings[1] >= 0) ? sprintf(s2_val, "%3d", (int)readings[1]) : sprintf(s2_val, " --");
+      sprintf(tempStr, "S1:%s%% S2:%s%%", s1_val, s2_val);
       break;
-    case 3: // Tampilan Lampu 2
-      sprintf(tempStr, "Lampu 2: %s", lampu2Status ? "ON" : "OFF");
+    case 3: // Tampilan Sensor 3 & 4
+      char s3_val[4], s4_val[4];
+      (readings[2] >= 0) ? sprintf(s3_val, "%3d", (int)readings[2]) : sprintf(s3_val, " --");
+      (readings[3] >= 0) ? sprintf(s4_val, "%3d", (int)readings[3]) : sprintf(s4_val, " --");
+      sprintf(tempStr, "S3:%s%% S4:%s%%", s3_val, s4_val);
       break;
   }
-  
-  // Format baris pertama agar pas 16 karakter
+
   sprintf(line1_buffer, "%-16s", tempStr);
 
-  // Format baris kedua (Alamat IP) agar pas 16 karakter
   char line2_buffer[17];
-  String ipString = "IP: " + WiFi.softAPIP().toString();
+  String ipString = "IP:" + WiFi.softAPIP().toString();
   sprintf(line2_buffer, "%-16s", ipString.c_str());
 
-  // Tampilkan ke LCD
-  lcd.setCursor(0, 0); 
+  lcd.setCursor(0, 0);
   lcd.print(line1_buffer);
-  lcd.setCursor(0, 1); 
+  lcd.setCursor(0, 1);
   lcd.print(line2_buffer);
 
   server.handleClient();

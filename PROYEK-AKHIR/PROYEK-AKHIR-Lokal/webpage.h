@@ -34,9 +34,9 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     box-shadow:0 10px 24px rgba(0,0,0,.25); transition: opacity .3s ease;
   }
   .card h2{margin:0 0 8px; font-size:18px}
-  .metric,.setting-row{font-size:14px; color:var(--muted); margin:2px 0}
-  .metric b{color:var(--text)}
-  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+  .metric,.setting-row{font-size:14px; color:var(--muted); margin:8px 0} /* Penambahan margin */
+  .metric b{color:var(--text); font-size: 1.1em;} /* Sedikit diperbesar */
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
   button{
     appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--text);
     padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600; font-size:13px;
@@ -71,10 +71,36 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     </header>
 
     <section class="grid">
+      <!-- KARTU BARU: PEMBACAAN SENSOR -->
+      <div class="card">
+        <h2>Pembacaan Sensor</h2>
+        <div class="metric">Sensor 1: <b id="s_m1">-</b>%</div> <!-- Label (Air) dihapus -->
+        <div class="metric">Sensor 2: <b id="s_m2">-</b>%</div>
+        <div class="metric">Sensor 3: <b id="s_m3">-</b>%</div>
+        <div class="metric">Sensor 4: <b id="s_m4">-</b>%</div>
+      </div>
+      
+      <!-- KARTU PENGATURAN -->
+      <div class="card">
+        <h2>Pengaturan Histeresis</h2>
+        <div class="setting-row">
+          <label for="onSlider">Batas ON:</label>
+          <input type="range" min="0" max="100" value="40" id="onSlider" oninput="this.nextElementSibling.textContent=this.value+'%'">
+          <span id="onValue">40%</span>
+        </div>
+        <div class="setting-row">
+          <label for="offSlider">Batas OFF:</label>
+          <input type="range" min="0" max="100" value="65" id="offSlider" oninput="this.nextElementSibling.textContent=this.value+'%'">
+          <span id="offValue">65%</span>
+        </div>
+        <div class="row">
+          <button class="primary" style="width:100%" onclick="saveSettings(this)">Simpan Pengaturan</button>
+        </div>
+      </div>
+      
       <!-- KARTU KONTROL -->
       <div class="card" id="card1">
         <h2>Sistem Air (Pompa+Valve)</h2>
-        <div class="metric">Kelembaban (S1): <b id="m1">-</b>%</div>
         <div class="metric">Status: <b id="p1">-</b></div>
         <div class="metric">Mode: <span class="badge ok" id="a1">AUTO</span></div>
         <div class="row">
@@ -89,7 +115,6 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
       <div class="card" id="card3">
         <h2>Lampu 1</h2>
         <div class="metric">Status: <b id="l1">-</b></div>
-        <div class="metric">Sensor (S3): <b id="m3">-</b>%</div>
         <div class="row">
           <button class="info" onclick="action('/lamp1','on')">NYALAKAN</button>
           <button class="danger"  onclick="action('/lamp1','off')">MATIKAN</button>
@@ -98,27 +123,9 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
       <div class="card" id="card4">
         <h2>Lampu 2</h2>
         <div class="metric">Status: <b id="l2">-</b></div>
-        <div class="metric">Sensor (S4): <b id="m4">-</b>%</div>
         <div class="row">
           <button class="info" onclick="action('/lamp2','on')">NYALAKAN</button>
           <button class="danger"  onclick="action('/lamp2','off')">MATIKAN</button>
-        </div>
-      </div>
-      <!-- KARTU PENGATURAN BARU -->
-      <div class="card">
-        <h2>Pengaturan Histeresis</h2>
-        <div class="setting-row">
-          <label for="onSlider">Batas ON:</label>
-          <input type="range" min="0" max="100" value="50" id="onSlider" oninput="this.nextElementSibling.textContent=this.value+'%'">
-          <span id="onValue">50%</span>
-        </div>
-        <div class="setting-row">
-          <label for="offSlider">Batas OFF:</label>
-          <input type="range" min="0" max="100" value="65" id="offSlider" oninput="this.nextElementSibling.textContent=this.value+'%'">
-          <span id="offValue">65%</span>
-        </div>
-        <div class="row">
-          <button class="primary" style="width:100%" onclick="saveSettings(this)">Simpan Pengaturan</button>
         </div>
       </div>
     </section>
@@ -130,19 +137,27 @@ async function refresh(){
     const r = await fetch('/status');
     const j = await r.json();
     
-    // Update Card 1: Sistem Air
+    // BARU: Update kartu pembacaan sensor
+    document.getElementById('s_m1').textContent = (j.moist1 < 0) ? '--' : j.moist1.toFixed(1);
+    document.getElementById('s_m2').textContent = (j.moist2 < 0) ? '--' : j.moist2.toFixed(1);
+    document.getElementById('s_m3').textContent = (j.moist3 < 0) ? '--' : j.moist3.toFixed(1);
+    document.getElementById('s_m4').textContent = (j.moist4 < 0) ? '--' : j.moist4.toFixed(1);
+
+    // Update Card 1: Sistem Air (tanpa pembacaan sensor)
     const card1 = document.getElementById('card1');
-    const m1 = document.getElementById('m1');
     const p1 = document.getElementById('p1');
     const a1 = document.getElementById('a1');
-    if (j.moist1 < 0) {
-      m1.textContent = '--';
+    
+    // ====== LOGIKA DIPERBARUI ======
+    // Cek apakah SEMUA sensor tidak terhubung
+    const noSensors = j.moist1 < 0 && j.moist2 < 0 && j.moist3 < 0 && j.moist4 < 0;
+
+    if (noSensors) {
       p1.textContent = 'DISABLE';
       a1.textContent = 'DISABLE';
       card1.classList.add('disabled');
       card1.querySelectorAll('button').forEach(b => b.disabled = true);
     } else {
-      m1.textContent = j.moist1.toFixed(1);
       p1.textContent = j.pump ? 'ON' : 'OFF';
       a1.textContent = j.auto ? 'AUTO' : 'MANUAL';
       a1.className = 'badge ' + (j.auto ? 'ok' : 'warn');
@@ -150,13 +165,11 @@ async function refresh(){
       card1.querySelectorAll('button').forEach(b => b.disabled = false);
     }
 
-    // Update Lampu 1 & 2
+    // Update Lampu 1 & 2 (tanpa pembacaan sensor)
     document.getElementById('l1').textContent = j.lamp1 ? 'ON' : 'OFF';
-    document.getElementById('m3').textContent = (j.moist3 < 0) ? '--' : j.moist3.toFixed(1);
     document.getElementById('l2').textContent = j.lamp2 ? 'ON' : 'OFF';
-    document.getElementById('m4').textContent = (j.moist4 < 0) ? '--' : j.moist4.toFixed(1);
 
-    // BARU: Update slider pengaturan
+    // Update slider pengaturan
     document.getElementById('onSlider').value = j.on_thresh;
     document.getElementById('onValue').textContent = j.on_thresh.toFixed(0) + '%';
     document.getElementById('offSlider').value = j.off_thresh;
@@ -171,7 +184,6 @@ async function action(path, state){
   setTimeout(refresh, 250);
 }
 
-// FUNGSI BARU: untuk menyimpan pengaturan
 async function saveSettings(btn){
   const onVal = document.getElementById('onSlider').value;
   const offVal = document.getElementById('offSlider').value;
