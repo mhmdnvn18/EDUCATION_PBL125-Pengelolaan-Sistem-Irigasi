@@ -198,4 +198,3 @@ refresh(); setInterval(refresh, 2000);
 </body>
 </html>
 )HTML";
-

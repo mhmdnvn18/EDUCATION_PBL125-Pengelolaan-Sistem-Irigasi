@@ -9,7 +9,7 @@ LCD_I2C lcd(0x27, 16, 2);
 Preferences preferences;
 
 // ====== Konfigurasi Jaringan & IP Statis ======
-const char* ssid = "KontrolPompaESP32";
+const char* ssid = "ESP32";
 const char* password = "12345678";
 IPAddress local_IP(192, 168, 5, 1);
 IPAddress gateway(192, 168, 5, 1);
@@ -51,7 +51,9 @@ void setRelay(uint8_t pin, bool on) {
 
 void setWaterSystem(bool on) {
   pompaStatus = on;
-  setRelay(relay1, on);
+  // Relay 1 (Pompa) menggunakan logika terbalik (Active LOW / NC)
+  digitalWrite(relay1, on ? LOW : HIGH);
+  // Relay 2 (Selenoid) menggunakan logika normal (Active HIGH / NO)
   setRelay(relay2, on);
 }
 
@@ -75,7 +77,11 @@ void setup() {
   Serial.println("Pengaturan ambang batas dimuat.");
 
   pinMode(relay1, OUTPUT); pinMode(relay2, OUTPUT); pinMode(relay3, OUTPUT); pinMode(relay4, OUTPUT);
-  setRelay(relay1, false); setRelay(relay2, false); setRelay(relay3, false); setRelay(relay4, false);
+  // Matikan semua relay saat awal sesuai logikanya masing-masing
+  digitalWrite(relay1, HIGH); // Pompa OFF (Active LOW)
+  setRelay(relay2, false);    // Selenoid OFF (Active HIGH)
+  setRelay(relay3, false);    // Lampu OFF (Active HIGH)
+  setRelay(relay4, false);    // Lampu OFF (Active HIGH)
 
   lcd.begin();
   lcd.backlight();
@@ -201,8 +207,27 @@ void loop() {
   sprintf(line1_buffer, "%-16s", tempStr);
 
   char line2_buffer[17];
-  String ipString = "IP:" + WiFi.softAPIP().toString();
-  sprintf(line2_buffer, "%-16s", ipString.c_str());
+  
+  // Menampilkan info jaringan secara bergantian di baris kedua
+  switch (lcdPage) {
+    case 1: { // Tampilkan SSID
+      String ssidString = "SSID:" + String(ssid);
+      sprintf(line2_buffer, "%-16s", ssidString.c_str());
+      break;
+    }
+    case 2: { // Tampilkan Password
+      String passString = "Pass:" + String(password);
+      sprintf(line2_buffer, "%-16s", passString.c_str());
+      break;
+    }
+    case 0: // Tampilkan IP
+    case 3: // Tampilkan IP juga
+    default: {
+      String ipString = "IP:" + WiFi.softAPIP().toString();
+      sprintf(line2_buffer, "%-16s", ipString.c_str());
+      break;
+    }
+  }
 
   lcd.setCursor(0, 0);
   lcd.print(line1_buffer);
