@@ -25,7 +25,8 @@ IPAddress subnet(255, 255, 255, 0);
 
 // ====== Konstanta & Variabel ======
 const int ADC_DISCONNECTED_THRESHOLD = 4000;
-const bool RELAY_ACTIVE_LOW = false;
+// --- PERUBAHAN 1: Mengubah konstanta menjadi true untuk logika active low ---
+const bool RELAY_ACTIVE_LOW = true;
 const int NUM_SENSORS = 2; // Menentukan jumlah sensor yang digunakan
 
 float onThreshold = 40.0;
@@ -41,6 +42,7 @@ unsigned long lastLcdSwitch = 0;
 int lcdPage = 0;
 
 void setRelay(uint8_t pin, bool on) {
+  // Fungsi ini sudah benar dan akan bekerja sesuai dengan flag RELAY_ACTIVE_LOW
   if (RELAY_ACTIVE_LOW) {
     digitalWrite(pin, on ? LOW : HIGH);
   } else {
@@ -50,9 +52,13 @@ void setRelay(uint8_t pin, bool on) {
 
 void setWaterSystem(bool on) {
   pompaStatus = on;
-  // Logika dibalik untuk Relay 1 (Pompa) karena terhubung NC
-  digitalWrite(relay1, on ? LOW : HIGH);
-  // Relay 2 (Valve) tetap menggunakan logika normal (NO)
+  // --- PERUBAHAN 2: Menyesuaikan logika Pompa (relay1) yang terhubung ke NC ---
+  // Untuk relay ACTIVE LOW yang terpasang di NC:
+  // - Untuk menyalakan pompa (memutus sirkuit relay), kirim HIGH.
+  // - Untuk mematikan pompa (menyambungkan sirkuit relay), kirim LOW.
+  digitalWrite(relay1, on ? HIGH : LOW);
+  
+  // Relay 2 (Valve) terhubung ke NO, jadi bisa pakai fungsi setRelay biasa
   setRelay(relay2, on);
 }
 
@@ -79,10 +85,14 @@ void setup() {
   pinMode(relay4, OUTPUT);
 
   // Atur kondisi awal relay, pastikan semua mati
-  digitalWrite(relay1, HIGH); // Kirim HIGH untuk mematikan pompa (karena NC)
-  setRelay(relay2, false);  // Kirim LOW untuk matikan valve (NO)
-  setRelay(relay3, false);  // Kirim LOW untuk matikan lampu (NO)
-  setRelay(relay4, false);  // Kirim LOW untuk matikan lampu (NO)
+  // --- PERUBAHAN 3: Menyesuaikan kondisi awal Pompa (relay1) ---
+  // Untuk mematikan pompa (NC), relay harus aktif. Sinyal LOW untuk active low.
+  digitalWrite(relay1, LOW); 
+  
+  // Untuk mematikan perangkat lain (NO), relay harus non-aktif. Sinyal HIGH untuk active low.
+  setRelay(relay2, false);  
+  setRelay(relay3, false);
+  setRelay(relay4, false);
 
   lcd.begin();
   lcd.backlight();
@@ -90,7 +100,7 @@ void setup() {
   lcd.setCursor(0, 1);
   lcd.print("Starting AP...");
   delay(2000);
-  
+
   if (!WiFi.softAPConfig(local_IP, gateway, subnet)) {
     Serial.println("Konfigurasi AP Gagal!");
     return;
@@ -137,6 +147,7 @@ void setup() {
       server.send(400, "text/plain", "Bad Request");
     }
   });
+
   server.begin();
 }
 
@@ -187,7 +198,8 @@ void loop() {
     case 2: // Tampilan Sensor 1 & 2
       char s1_val[4], s2_val[4];
       (readings[0] >= 0) ? sprintf(s1_val, "%3d", (int)readings[0]) : sprintf(s1_val, " --");
-      (readings[1] >= 0) ? sprintf(s2_val, "%3d", (int)readings[1]) : sprintf(s2_val, " --");
+      (readings[1] >= 0) ?
+      sprintf(s2_val, "%3d", (int)readings[1]) : sprintf(s2_val, " --");
       sprintf(tempStr, "S1:%s%% S2:%s%%", s1_val, s2_val);
       break;
   }
