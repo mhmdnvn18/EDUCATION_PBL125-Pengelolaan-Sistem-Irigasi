@@ -71,16 +71,12 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     </header>
 
     <section class="grid">
-      <!-- KARTU BARU: PEMBACAAN SENSOR -->
       <div class="card">
         <h2>Pembacaan Sensor</h2>
-        <div class="metric">Sensor 1: <b id="s_m1">-</b>%</div> <!-- Label (Air) dihapus -->
+        <div class="metric">Sensor 1: <b id="s_m1">-</b>%</div>
         <div class="metric">Sensor 2: <b id="s_m2">-</b>%</div>
-        <div class="metric">Sensor 3: <b id="s_m3">-</b>%</div>
-        <div class="metric">Sensor 4: <b id="s_m4">-</b>%</div>
       </div>
       
-      <!-- KARTU PENGATURAN -->
       <div class="card">
         <h2>Pengaturan Histeresis</h2>
         <div class="setting-row">
@@ -98,7 +94,6 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
         </div>
       </div>
       
-      <!-- KARTU KONTROL -->
       <div class="card" id="card1">
         <h2>Sistem Air (Pompa+Valve)</h2>
         <div class="metric">Status: <b id="p1">-</b></div>
@@ -137,20 +132,16 @@ async function refresh(){
     const r = await fetch('/status');
     const j = await r.json();
     
-    // BARU: Update kartu pembacaan sensor
+    // Update kartu pembacaan sensor
     document.getElementById('s_m1').textContent = (j.moist1 < 0) ? '--' : j.moist1.toFixed(1);
     document.getElementById('s_m2').textContent = (j.moist2 < 0) ? '--' : j.moist2.toFixed(1);
-    document.getElementById('s_m3').textContent = (j.moist3 < 0) ? '--' : j.moist3.toFixed(1);
-    document.getElementById('s_m4').textContent = (j.moist4 < 0) ? '--' : j.moist4.toFixed(1);
 
-    // Update Card 1: Sistem Air (tanpa pembacaan sensor)
+    // Update Card 1: Sistem Air
     const card1 = document.getElementById('card1');
     const p1 = document.getElementById('p1');
     const a1 = document.getElementById('a1');
     
-    // ====== LOGIKA DIPERBARUI ======
-    // Cek apakah SEMUA sensor tidak terhubung
-    const noSensors = j.moist1 < 0 && j.moist2 < 0 && j.moist3 < 0 && j.moist4 < 0;
+    const noSensors = j.moist1 < 0 && j.moist2 < 0;
 
     if (noSensors) {
       p1.textContent = 'DISABLE';
@@ -165,15 +156,21 @@ async function refresh(){
       card1.querySelectorAll('button').forEach(b => b.disabled = false);
     }
 
-    // Update Lampu 1 & 2 (tanpa pembacaan sensor)
+    // Update Lampu 1 & 2
     document.getElementById('l1').textContent = j.lamp1 ? 'ON' : 'OFF';
     document.getElementById('l2').textContent = j.lamp2 ? 'ON' : 'OFF';
 
-    // Update slider pengaturan
+    // ==========================================================
+    // BAGIAN PENTING: SINKRONISASI TAMPILAN SLIDER
+    // ==========================================================
+    // Perbarui nilai slider agar sesuai dengan data dari ESP32
     document.getElementById('onSlider').value = j.on_thresh;
+    // Perbarui teks persentase agar sesuai juga
     document.getElementById('onValue').textContent = j.on_thresh.toFixed(0) + '%';
+    
     document.getElementById('offSlider').value = j.off_thresh;
     document.getElementById('offValue').textContent = j.off_thresh.toFixed(0) + '%';
+    // ==========================================================
 
     if (j.ip) document.getElementById('ipBox').textContent = 'IP: ' + j.ip;
   }catch(e){ console.log(e); }

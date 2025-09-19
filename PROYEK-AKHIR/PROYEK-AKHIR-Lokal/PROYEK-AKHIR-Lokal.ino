@@ -18,8 +18,6 @@ IPAddress subnet(255, 255, 255, 0);
 // ====== Pin assignment ======
 #define sensor1 34
 #define sensor2 35
-#define sensor3 32
-#define sensor4 33
 #define relay1 4
 #define relay2 5
 #define relay3 18
@@ -28,6 +26,7 @@ IPAddress subnet(255, 255, 255, 0);
 // ====== Konstanta & Variabel ======
 const int ADC_DISCONNECTED_THRESHOLD = 4000;
 const bool RELAY_ACTIVE_LOW = false;
+const int NUM_SENSORS = 2; // Menentukan jumlah sensor yang digunakan
 
 float onThreshold = 40.0;
 float offThreshold = 65.0;
@@ -51,9 +50,9 @@ void setRelay(uint8_t pin, bool on) {
 
 void setWaterSystem(bool on) {
   pompaStatus = on;
-  // Relay 1 (Pompa) menggunakan logika terbalik (Active LOW / NC)
+  // Logika dibalik untuk Relay 1 (Pompa) karena terhubung NC
   digitalWrite(relay1, on ? LOW : HIGH);
-  // Relay 2 (Selenoid) menggunakan logika normal (Active HIGH / NO)
+  // Relay 2 (Valve) tetap menggunakan logika normal (NO)
   setRelay(relay2, on);
 }
 
@@ -76,17 +75,20 @@ void setup() {
   preferences.end();
   Serial.println("Pengaturan ambang batas dimuat.");
 
-  pinMode(relay1, OUTPUT); pinMode(relay2, OUTPUT); pinMode(relay3, OUTPUT); pinMode(relay4, OUTPUT);
-  // Matikan semua relay saat awal sesuai logikanya masing-masing
-  digitalWrite(relay1, HIGH); // Pompa OFF (Active LOW)
-  setRelay(relay2, false);    // Selenoid OFF (Active HIGH)
-  setRelay(relay3, false);    // Lampu OFF (Active HIGH)
-  setRelay(relay4, false);    // Lampu OFF (Active HIGH)
+  pinMode(relay1, OUTPUT); pinMode(relay2, OUTPUT); pinMode(relay3, OUTPUT);
+  pinMode(relay4, OUTPUT);
+
+  // Atur kondisi awal relay, pastikan semua mati
+  digitalWrite(relay1, HIGH); // Kirim HIGH untuk mematikan pompa (karena NC)
+  setRelay(relay2, false);  // Kirim LOW untuk matikan valve (NO)
+  setRelay(relay3, false);  // Kirim LOW untuk matikan lampu (NO)
+  setRelay(relay4, false);  // Kirim LOW untuk matikan lampu (NO)
 
   lcd.begin();
   lcd.backlight();
   lcd.print("Smart Control");
-  lcd.setCursor(0, 1); lcd.print("Starting AP...");
+  lcd.setCursor(0, 1);
+  lcd.print("Starting AP...");
   delay(2000);
   
   if (!WiFi.softAPConfig(local_IP, gateway, subnet)) {
@@ -99,30 +101,25 @@ void setup() {
   Serial.print("AP IP address: "); Serial.println(IP);
 
   lcd.clear();
-
   // === Rute Web ===
   server.on("/", HTTP_GET, []() {
     server.send_P(200, "text/html; charset=utf-8", PAGE_INDEX);
   });
-
   server.on("/status", HTTP_GET, []() {
-    float m1 = getMoisture(sensor1), m2 = getMoisture(sensor2), m3 = getMoisture(sensor3), m4 = getMoisture(sensor4);
+    float m1 = getMoisture(sensor1), m2 = getMoisture(sensor2);
     String json = "{";
     json += "\"moist1\":" + String(m1, 1) + ",";
+    json += "\"moist2\":" + String(m2, 1) + ",";
     json += "\"pump\":" + String(pompaStatus) + ",";
     json += "\"auto\":" + String(autoModeAir) + ",";
-    json += "\"moist2\":" + String(m2, 1) + ",";
     json += "\"lamp1\":" + String(lampu1Status) + ",";
     json += "\"lamp2\":" + String(lampu2Status) + ",";
-    json += "\"moist3\":" + String(m3, 1) + ",";
-    json += "\"moist4\":" + String(m4, 1) + ",";
     json += "\"ip\":\"" + WiFi.softAPIP().toString() + "\",";
     json += "\"on_thresh\":" + String(onThreshold, 1) + ",";
     json += "\"off_thresh\":" + String(offThreshold, 1) + "";
     json += "}";
     server.send(200, "application/json", json);
   });
-
   server.on("/water", HTTP_POST, []() { autoModeAir = false; setWaterSystem(server.arg("state") == "on"); server.send(200); });
   server.on("/auto",  HTTP_POST, []() { autoModeAir = (server.arg("state") == "on"); server.send(200); });
   server.on("/lamp1", HTTP_POST, []() { lampu1Status = (server.arg("state") == "on"); setRelay(relay3, lampu1Status); server.send(200); });
@@ -140,22 +137,19 @@ void setup() {
       server.send(400, "text/plain", "Bad Request");
     }
   });
-
   server.begin();
 }
 
 // ====== Loop ======
 void loop() {
-  float readings[4];
+  float readings[NUM_SENSORS];
   readings[0] = getMoisture(sensor1); delay(10);
   readings[1] = getMoisture(sensor2); delay(10);
-  readings[2] = getMoisture(sensor3); delay(10);
-  readings[3] = getMoisture(sensor4);
 
   bool anySensorDry = false;
   bool allSensorsWet = true;
   int connectedSensors = 0;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < NUM_SENSORS; i++) {
     if (readings[i] >= 0) {
       connectedSensors++;
       if (readings[i] < onThreshold) anySensorDry = true;
@@ -170,7 +164,7 @@ void loop() {
 
   // ====== BAGIAN UPDATE LCD BARU ======
   if (millis() - lastLcdSwitch > 3000) {
-    lcdPage = (lcdPage + 1) % 4;
+    lcdPage = (lcdPage + 1) % 3;
     lastLcdSwitch = millis();
   }
 
@@ -196,18 +190,11 @@ void loop() {
       (readings[1] >= 0) ? sprintf(s2_val, "%3d", (int)readings[1]) : sprintf(s2_val, " --");
       sprintf(tempStr, "S1:%s%% S2:%s%%", s1_val, s2_val);
       break;
-    case 3: // Tampilan Sensor 3 & 4
-      char s3_val[4], s4_val[4];
-      (readings[2] >= 0) ? sprintf(s3_val, "%3d", (int)readings[2]) : sprintf(s3_val, " --");
-      (readings[3] >= 0) ? sprintf(s4_val, "%3d", (int)readings[3]) : sprintf(s4_val, " --");
-      sprintf(tempStr, "S3:%s%% S4:%s%%", s3_val, s4_val);
-      break;
   }
 
   sprintf(line1_buffer, "%-16s", tempStr);
 
   char line2_buffer[17];
-  
   // Menampilkan info jaringan secara bergantian di baris kedua
   switch (lcdPage) {
     case 1: { // Tampilkan SSID
@@ -221,7 +208,6 @@ void loop() {
       break;
     }
     case 0: // Tampilkan IP
-    case 3: // Tampilkan IP juga
     default: {
       String ipString = "IP:" + WiFi.softAPIP().toString();
       sprintf(line2_buffer, "%-16s", ipString.c_str());
@@ -237,4 +223,3 @@ void loop() {
   server.handleClient();
   delay(100);
 }
-
