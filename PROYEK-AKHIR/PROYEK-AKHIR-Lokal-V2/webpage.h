@@ -75,8 +75,30 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
   .ok{color:var(--brand-weak); border-color:#166534}
   .warn{color:#fde68a; border-color:#92400e}
   footer{color:var(--muted); font-size:12px; text-align:center; margin:18px 0}
-  button:disabled{cursor:not-allowed;transform:none;}
-  .card.disabled{opacity:0.4;}
+  /* Button loading state */
+  .button-loading {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+  .button-loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
   /* Gaya untuk slider */
   .setting-row{display:flex;align-items:center;gap:10px;margin:12px 0;}
   .setting-row label{flex-shrink:0}
@@ -520,14 +542,42 @@ async function refresh(){
 }
 
 async function action(path, state){
-  await fetch(path + '?state=' + state, {method:'POST'});
-  setTimeout(refresh, 250);
+  const activeButton = event ? event.target : null;
+  if (activeButton) {
+    activeButton.classList.add('button-loading');
+    activeButton.disabled = true;
+  }
+  
+  try {
+    const response = await fetch(path + '?state=' + state, {method:'POST'});
+    if (!response.ok) throw new Error('Network error');
+    setTimeout(refresh, 250);
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification('Gagal mengontrol perangkat', 'error');
+  } finally {
+    if (activeButton) {
+      activeButton.classList.remove('button-loading');
+      activeButton.disabled = false;
+    }
+  }
 }
 
 async function manualWaterControl(state){
   // Kontrol manual sistem irigasi - ON atau OFF
-  await fetch('/water-manual?state=' + state, {method:'POST'});
-  setTimeout(refresh, 250);
+  try {
+    const response = await fetch('/water?state=' + state, {
+      method: 'POST',
+      timeout: 5000
+    });
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    setTimeout(refresh, 250);
+  } catch (error) {
+    console.error('Error controlling water system:', error);
+    showNotification('Gagal mengontrol sistem irigasi', 'error');
+  }
 }
 
 async function toggleWaterSystem(forceOn = false){
@@ -552,10 +602,70 @@ async function toggleAutoMode(){
 async function saveSettings(btn){
   const onVal = document.getElementById('onSlider').value;
   const offVal = document.getElementById('offSlider').value;
+  
+  // Validasi di frontend
+  if (parseInt(onVal) >= parseInt(offVal)) {
+    showNotification('Error: Batas ON harus lebih kecil dari batas OFF', 'error');
+    return;
+  }
+  
   btn.textContent = 'Menyimpan...';
-  await fetch(`/settings?on=${onVal}&off=${offVal}`, {method:'POST'});
-  btn.textContent = 'Tersimpan!';
-  setTimeout(() => { btn.textContent = 'Simpan Pengaturan'; }, 2000);
+  btn.disabled = true;
+  
+  try {
+    const response = await fetch(`/settings?on=${onVal}&off=${offVal}`, {method:'POST'});
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+    btn.textContent = 'Tersimpan!';
+    showNotification('Pengaturan berhasil disimpan', 'success');
+    setTimeout(refresh, 500);
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    btn.textContent = 'Gagal!';
+    showNotification(error.message || 'Gagal menyimpan pengaturan', 'error');
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = 'Simpan Pengaturan'; }, 3000);
+  }
+}
+
+// Fungsi untuk menampilkan notifikasi
+function showNotification(message, type = 'info') {
+  // Hapus notifikasi sebelumnya
+  const existingNotif = document.getElementById('notification');
+  if (existingNotif) existingNotif.remove();
+  
+  const notification = document.createElement('div');
+  notification.id = 'notification';
+  notification.style.cssText = `
+    position: fixed; top: 20px; right: 20px; z-index: 1000;
+    padding: 12px 20px; border-radius: 8px; font-weight: 600;
+    max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease;
+  `;
+  
+  if (type === 'error') {
+    notification.style.background = '#EF4444';
+    notification.style.color = 'white';
+  } else if (type === 'success') {
+    notification.style.background = '#05C168';
+    notification.style.color = 'white';
+  } else {
+    notification.style.background = '#3B82F6';
+    notification.style.color = 'white';
+  }
+  
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  // Auto remove setelah 4 detik
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 4000);
 }
 
 refresh(); setInterval(refresh, 2000);

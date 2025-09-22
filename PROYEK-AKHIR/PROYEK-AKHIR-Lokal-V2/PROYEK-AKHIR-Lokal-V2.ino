@@ -130,26 +130,50 @@ void setup() {
     json += "}";
     server.send(200, "application/json", json);
   });
-  server.on("/water", HTTP_POST, []() { autoModeAir = false; setWaterSystem(server.arg("state") == "on"); server.send(200); });
-  server.on("/water-manual", HTTP_POST, []() { 
+  server.on("/water", HTTP_POST, []() { 
     autoModeAir = false; 
     setWaterSystem(server.arg("state") == "on"); 
+    Serial.println("Water system manual control: " + server.arg("state"));
     server.send(200); 
   });
-  server.on("/auto",  HTTP_POST, []() { autoModeAir = (server.arg("state") == "on"); server.send(200); });
+  server.on("/auto",  HTTP_POST, []() { 
+    autoModeAir = (server.arg("state") == "on"); 
+    Serial.println("Auto mode: " + server.arg("state"));
+    server.send(200); 
+  });
   server.on("/lamp1", HTTP_POST, []() { lampu1Status = (server.arg("state") == "on"); setRelay(relay3, lampu1Status); server.send(200); });
   server.on("/lamp2", HTTP_POST, []() { lampu2Status = (server.arg("state") == "on"); setRelay(relay4, lampu2Status); server.send(200); });
   server.on("/settings", HTTP_POST, []() {
     if (server.hasArg("on") && server.hasArg("off")) {
-      onThreshold = server.arg("on").toFloat();
-      offThreshold = server.arg("off").toFloat();
+      float newOnThreshold = server.arg("on").toFloat();
+      float newOffThreshold = server.arg("off").toFloat();
+      
+      // Validasi: onThreshold harus lebih kecil dari offThreshold
+      if (newOnThreshold >= newOffThreshold) {
+        Serial.println("Error: onThreshold must be less than offThreshold");
+        server.send(400, "text/plain", "Error: Batas ON harus lebih kecil dari batas OFF");
+        return;
+      }
+      
+      // Validasi: nilai dalam range yang wajar (0-100)
+      if (newOnThreshold < 0 || newOnThreshold > 100 || newOffThreshold < 0 || newOffThreshold > 100) {
+        Serial.println("Error: Threshold values must be between 0-100");
+        server.send(400, "text/plain", "Error: Nilai harus antara 0-100");
+        return;
+      }
+      
+      onThreshold = newOnThreshold;
+      offThreshold = newOffThreshold;
+      
       preferences.begin("settings", false);
       preferences.putFloat("on_thresh", onThreshold);
       preferences.putFloat("off_thresh", offThreshold);
       preferences.end();
+      
+      Serial.println("Settings updated: ON=" + String(onThreshold) + ", OFF=" + String(offThreshold));
       server.send(200, "text/plain", "OK");
     } else {
-      server.send(400, "text/plain", "Bad Request");
+      server.send(400, "text/plain", "Bad Request: Missing parameters");
     }
   });
 
@@ -174,8 +198,14 @@ void loop() {
   }
 
   if (autoModeAir && connectedSensors > 0) {
-    if (!pompaStatus && anySensorDry) setWaterSystem(true);
-    else if (pompaStatus && allSensorsWet) setWaterSystem(false);
+    if (!pompaStatus && anySensorDry) {
+      setWaterSystem(true);
+      Serial.println("AUTO: Water system ON - Sensor dry detected");
+    }
+    else if (pompaStatus && allSensorsWet) {
+      setWaterSystem(false);
+      Serial.println("AUTO: Water system OFF - All sensors wet");
+    }
   }
 
   // ====== BAGIAN UPDATE LCD BARU ======
