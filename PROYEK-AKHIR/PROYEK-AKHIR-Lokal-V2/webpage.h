@@ -12,6 +12,26 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     --bg:#0f172a;--panel:#111827;--card:#1f2937;--text:#e5e7eb;--muted:#9ca3af;--brand:#22c55e;
     --brand-weak:#86efac;--warn:#f59e0b;--danger:#ef4444;--border:#334155;--info:#3b82f6;
     --primary-blue:#4F8FE8;--primary-teal:#26D0CE;--orange:#FF7A5A;--green:#05C168;
+    
+    /* Consistent spacing system */
+    --section-spacing: 24px;
+    --card-padding: 20px;
+    --grid-gap: 20px;
+    --border-radius: 16px;
+    --inner-spacing: 16px;
+    --small-spacing: 12px;
+  }
+  
+  /* Mobile spacing overrides */
+  @media(max-width:480px){
+    :root{
+      --section-spacing: 20px;
+      --card-padding: 16px;
+      --grid-gap: 16px;
+      --border-radius: 12px;
+      --inner-spacing: 12px;
+      --small-spacing: 8px;
+    }
   }
   *{box-sizing:border-box}
   body{
@@ -19,9 +39,12 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     color:var(--text); background:radial-gradient(1200px 600px at 10% -10%, #111827 20%, transparent 60%), var(--bg);
   }
   .container{max-width:980px;margin:32px auto;padding:0 16px}
+  @media(max-width:480px){
+    .container{margin:16px auto;padding:0 12px}
+  }
   header{
     background:linear-gradient(135deg, #4F8FE8 0%, #26D0CE 100%);
-    border:none; border-radius:20px; padding:32px 28px; margin-bottom:24px;
+    border:none; border-radius:var(--border-radius); padding:var(--card-padding); margin-bottom:var(--section-spacing);
     color:white; position:relative; overflow:hidden;
   }
   header::before {
@@ -33,15 +56,27 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
   }
   .header-content{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;}
   .title-section h1{margin:0;font-size:32px;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.1);}
+  @media(max-width:480px){
+    .title-section h1{font-size:24px;line-height:1.2;}
+  }
   .title-section .subtitle{font-size:16px;margin-top:8px;opacity:0.9;font-weight:400;}
+  @media(max-width:480px){
+    .title-section .subtitle{font-size:14px;line-height:1.4;}
+  }
   .title-section .features{display:flex;gap:24px;margin-top:16px;font-size:14px;opacity:0.8;}
+  @media(max-width:480px){
+    .title-section .features{gap:16px;font-size:12px;flex-wrap:wrap;}
+  }
   .feature-item{display:flex;align-items:center;gap:6px;}
+  @media(max-width:480px){
+    .feature-item{gap:4px;}
+  }
   .status-section{text-align:right;}
   .esp-status{background:rgba(255,255,255,0.15);padding:8px 16px;border-radius:20px;font-size:14px;font-weight:600;margin-bottom:8px;}
   .esp-status.offline{background:rgba(255,122,90,0.8);}
   .esp-status.online{background:rgba(5,193,104,0.8);}
   .last-update{font-size:12px;opacity:0.8;}
-  .grid{display:grid; gap:20px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .grid{display:grid; gap:var(--grid-gap); grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
   @media(min-width:768px){
     .grid{grid-template-columns:2fr 1fr;}
     .sensor-grid{grid-template-columns:1fr 1fr;}
@@ -49,32 +84,58 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
   @media(max-width:767px){
     .sensor-grid{grid-template-columns:1fr;}
     .header-content{text-align:center;}
-    .status-section{text-align:center;margin-top:16px;}
+    .status-section{text-align:center;margin-top:var(--inner-spacing);}
     .title-section .features{justify-content:center;}
+  }
+  @media(max-width:480px){
+    .grid{grid-template-columns:1fr;}
   }
   .card{
     background:linear-gradient(180deg, rgba(255,255,255,.02), transparent), var(--card);
-    border:1px solid var(--border); border-radius:16px; padding:16px;
+    border:1px solid var(--border); border-radius:var(--border-radius); padding:var(--card-padding);
     box-shadow:0 10px 24px rgba(0,0,0,.25); transition: opacity .3s ease;
   }
-  .card h2{margin:0 0 8px; font-size:18px}
+  .card h2{margin:0 0 var(--small-spacing); font-size:18px}
+  @media(max-width:480px){
+    .card h2{font-size:16px;}
+  }
   .metric,.setting-row{font-size:14px; color:var(--muted); margin:8px 0} /* Penambahan margin */
+  @media(max-width:480px){
+    .metric,.setting-row{font-size:13px;margin:6px 0;}
+  }
   .metric b{color:var(--text); font-size: 1.1em;} /* Sedikit diperbesar */
   .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
+  @media(max-width:480px){
+    .row{gap:12px; margin-top:12px;}
+  }
   button{
     appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--text);
-    padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600; font-size:13px;
+    padding:var(--small-spacing) var(--inner-spacing); border-radius:var(--border-radius); cursor:pointer; font-weight:600; font-size:13px;
     transition:transform .04s ease, background .2s ease, border-color .2s ease, color .2s ease;
+    min-height:44px; /* Minimum touch target size */
+    display:flex; align-items:center; justify-content:center;
+  }
+  @media(max-width:480px){
+    button{
+      min-height:48px; /* Larger touch targets on mobile */
+      padding:var(--inner-spacing) var(--card-padding); font-size:14px;
+    }
   }
   button:hover{transform:translateY(-1px); border-color:#4b5563}
+  @media(hover:none){
+    button:hover{transform:none;} /* Disable hover effects on touch devices */
+  }
   .primary{background:rgba(34,197,94,.12); border-color:#14532d}
   .danger{background:rgba(239,68,68,.12); border-color:#7f1d1d}
   .info{background:rgba(59,130,246,.12); border-color:#1e40af;}
   .ghost{background:transparent}
-  .badge{display:inline-block; font-size:12px; padding:2px 10px; border-radius:999px; border:1px solid var(--border); color:var(--muted)}
+  .badge{display:inline-block; font-size:12px; padding:2px var(--small-spacing); border-radius:999px; border:1px solid var(--border); color:var(--muted)}
   .ok{color:var(--brand-weak); border-color:#166534}
   .warn{color:#fde68a; border-color:#92400e}
-  footer{color:var(--muted); font-size:12px; text-align:center; margin:18px 0}
+  footer{color:var(--muted); font-size:12px; text-align:center; margin:var(--section-spacing) 0}
+  @media(max-width:480px){
+    footer{font-size:11px;margin:var(--inner-spacing) 0;padding:0 var(--inner-spacing);}
+  }
   /* Button loading state */
   .button-loading {
     opacity: 0.7;
@@ -85,7 +146,7 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     display: inline-block;
     width: 12px;
     height: 12px;
-    margin-left: 8px;
+    margin-left: var(--small-spacing);
     border: 2px solid transparent;
     border-top: 2px solid currentColor;
     border-radius: 50%;
@@ -99,29 +160,77 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
+  
+  /* Mobile-specific optimizations */
+  @media(max-width: 480px) {
+    /* Better spacing for mobile */
+    section {
+      margin-bottom: 16px !important;
+    }
+    
+    /* Improve notification positioning for mobile */
+    #notification {
+      top: 10px !important;
+      right: 10px !important;
+      left: 10px !important;
+      max-width: none !important;
+    }
+    
+    /* Better progress bar visibility */
+    .progress-container {
+      height: 10px !important;
+    }
+    
+    /* Improve badge readability */
+    .badge {
+      font-size: 11px !important;
+      padding: 3px 8px !important;
+    }
+    
+    /* Stack sections title better */
+    h2[style*="display:flex"] {
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+    }
+  }
   /* Gaya untuk slider */
   .setting-row{display:flex;align-items:center;gap:10px;margin:12px 0;}
+  @media(max-width:480px){
+    .setting-row{gap:8px;margin:10px 0;}
+  }
   .setting-row label{flex-shrink:0}
+  @media(max-width:480px){
+    .setting-row label{font-size:13px;}
+  }
   .setting-row input[type=range]{width:100%;}
   .setting-row span{font-weight:bold;color:var(--text);width:45px}
+  @media(max-width:480px){
+    .setting-row span{width:40px;font-size:13px;}
+  }
 
   /* Progress bars untuk sensor */
-  .sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+  .sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--grid-gap);margin-bottom:var(--section-spacing);}
+  @media(max-width:480px){
+    .sensor-grid{grid-template-columns:1fr;}
+  }
   .sensor-card{
     background:rgba(255,255,255,0.05);
     border:1px solid rgba(255,255,255,0.1);
-    border-radius:16px;
-    padding:20px;
+    border-radius:var(--border-radius);
+    padding:var(--card-padding);
     text-align:center;
   }
   .sensor-card.channel1{border-left:4px solid var(--primary-blue);}
   .sensor-card.channel2{border-left:4px solid var(--primary-teal);}
-  .sensor-title{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;}
+  .sensor-title{display:flex;align-items:center;justify-content:center;gap:var(--small-spacing);margin-bottom:var(--small-spacing);}
   .sensor-title h3{margin:0;font-size:16px;font-weight:600;}
+  @media(max-width:480px){
+    .sensor-title h3{font-size:14px;}
+  }
   .sensor-status{
     display:inline-block;
-    padding:4px 12px;
-    border-radius:12px;
+    padding:4px var(--small-spacing);
+    border-radius:var(--small-spacing);
     font-size:11px;
     font-weight:600;
     text-transform:uppercase;
@@ -129,19 +238,28 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     color:#FF7A5A;
     border:1px solid rgba(255,122,90,0.3);
   }
+  @media(max-width:480px){
+    .sensor-status{font-size:10px;}
+  }
   .sensor-value{
     font-size:48px;
     font-weight:700;
-    margin:16px 0 8px;
+    margin:var(--inner-spacing) 0 var(--small-spacing);
     background:linear-gradient(135deg, var(--primary-blue), var(--primary-teal));
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
     background-clip:text;
   }
+  @media(max-width:480px){
+    .sensor-value{font-size:36px;}
+  }
   .sensor-label{
     color:var(--muted);
     font-size:14px;
-    margin-bottom:16px;
+    margin-bottom:var(--inner-spacing);
+  }
+  @media(max-width:480px){
+    .sensor-label{font-size:12px;}
   }
   .progress-container{
     background:rgba(255,255,255,0.1);
@@ -162,8 +280,8 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
   .weather-panel{
     background:linear-gradient(135deg, #1F2937 0%, #111827 100%);
     border:1px solid var(--border);
-    border-radius:20px;
-    padding:24px;
+    border-radius:var(--border-radius);
+    padding:var(--card-padding);
     text-align:center;
     position:relative;
   }
@@ -171,27 +289,36 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:8px;
-    margin-bottom:16px;
+    gap:var(--small-spacing);
+    margin-bottom:var(--inner-spacing);
     color:var(--text);
     font-weight:600;
+  }
+  @media(max-width:480px){
+    .weather-location{font-size:14px;}
   }
   .weather-temp{
     font-size:64px;
     font-weight:300;
     color:#F59E0B;
-    margin:12px 0;
+    margin:var(--small-spacing) 0;
+  }
+  @media(max-width:480px){
+    .weather-temp{font-size:48px;}
   }
   .weather-desc{
     color:var(--muted);
     font-size:14px;
-    margin-bottom:20px;
+    margin-bottom:var(--card-padding);
+  }
+  @media(max-width:480px){
+    .weather-desc{font-size:13px;}
   }
   .weather-stats{
     display:grid;
     grid-template-columns:repeat(3,1fr);
-    gap:16px;
-    margin-top:20px;
+    gap:var(--inner-spacing);
+    margin-top:var(--card-padding);
   }
   .weather-stat{
     text-align:center;
@@ -200,15 +327,24 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     font-size:20px;
     margin-bottom:4px;
   }
+  @media(max-width:480px){
+    .weather-stat-icon{font-size:18px;margin-bottom:3px;}
+  }
   .weather-stat-label{
     font-size:10px;
     color:var(--muted);
     text-transform:uppercase;
     margin-bottom:4px;
   }
+  @media(max-width:480px){
+    .weather-stat-label{font-size:9px;margin-bottom:3px;}
+  }
   .weather-stat-value{
     font-weight:600;
     color:var(--text);
+  }
+  @media(max-width:480px){
+    .weather-stat-value{font-size:14px;}
   }
 </style>
 </head>
@@ -233,8 +369,8 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     </header>
 
     <!-- Pembacaan Sensor Terkini -->
-    <section style="margin-bottom:24px;">
-      <h2 style="margin:0 0 16px;color:var(--text);font-size:20px;display:flex;align-items:center;gap:8px;">
+    <section style="margin-bottom:var(--section-spacing);">
+      <h2 style="margin:0 0 var(--inner-spacing);color:var(--text);font-size:20px;display:flex;align-items:center;gap:var(--small-spacing);">
         📊 Pembacaan Sensor Terkini
       </h2>
       <div class="sensor-grid">
@@ -292,9 +428,9 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
     </section>
 
     <!-- Pengaturan Sistem -->
-    <section style="margin-top:24px;">
+    <section style="margin-top:var(--section-spacing);">
       <div class="card">
-        <h2 style="display:flex;align-items:center;gap:8px;">⚙️ Pengaturan Histeresis</h2>
+        <h2 style="display:flex;align-items:center;gap:var(--small-spacing);">⚙️ Pengaturan Histeresis</h2>
         <div class="setting-row">
           <label for="onSlider">Batas ON:</label>
           <input type="range" min="0" max="100" value="40" id="onSlider" oninput="this.nextElementSibling.textContent=this.value+'%'">
@@ -310,10 +446,10 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
         </div>
       </div>
       
-      <div class="card" id="card1">
-        <h2 style="display:flex;align-items:center;gap:8px;color:#4F8FE8;">💧 Kontrol Sistem Irigasi Otomatis</h2>
-        <div style="background:rgba(79,143,232,0.05);padding:16px;border-radius:12px;margin:12px 0;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <div class="card" id="card1" style="margin-top:var(--section-spacing);">
+        <h2 style="display:flex;align-items:center;gap:var(--small-spacing);color:#4F8FE8;">💧 Kontrol Sistem Irigasi Otomatis</h2>
+        <div style="background:rgba(79,143,232,0.05);padding:var(--inner-spacing);border-radius:var(--border-radius);margin:var(--inner-spacing) 0;">
+          <div style="display:flex;align-items:center;gap:var(--small-spacing);margin-bottom:var(--inner-spacing);">
             <span style="font-size:20px;">💧</span>
             <div>
               <div style="font-weight:600;font-size:16px;">Sistem Irigasi Utama</div>
@@ -321,14 +457,14 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
             </div>
           </div>
           
-          <div style="display:flex;align-items:center;gap:12px;margin:12px 0;">
+          <div style="display:flex;align-items:center;gap:var(--inner-spacing);margin:var(--inner-spacing) 0;">
             <span style="font-size:16px;">⚡</span>
             <span style="font-size:14px;color:var(--muted);">Status Sistem Irigasi</span>
             <span style="flex:1;text-align:right;font-weight:600;color:#ef4444;" id="p1">MATI</span>
           </div>
 
-          <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:10px;margin:12px 0;">
-            <div style="display:flex;align-items:center;gap:12px;">
+          <div style="background:rgba(255,255,255,0.05);padding:var(--inner-spacing);border-radius:var(--small-spacing);margin:var(--inner-spacing) 0;">
+            <div style="display:flex;align-items:center;gap:var(--inner-spacing);">
               <span style="font-size:16px;">⚙️</span>
               <span style="font-size:14px;color:var(--muted);">Mode Kontrol</span>
               <span style="flex:1;text-align:right;">
@@ -340,48 +476,71 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--small-spacing);margin-top:var(--inner-spacing);">
             <button class="primary" style="background:#05C168;border-color:#059669;" onclick="manualWaterControl('on')">🟢 Manual ON</button>
             <button class="danger" style="background:#EF4444;border-color:#DC2626;" onclick="manualWaterControl('off')">🔴 Manual OFF</button>
           </div>
-          <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;">
+          <div style="display:grid;grid-template-columns:1fr;gap:var(--small-spacing);margin-top:var(--small-spacing);">
             <button class="info" style="background:#3B82F6;border-color:#1D4ED8;" onclick="toggleAutoMode()">🔄 Aktifkan Mode Otomatis</button>
           </div>
         </div>
 
-        <div style="font-size:12px;color:var(--info);background:rgba(59,130,246,0.1);padding:8px;border-radius:8px;margin-top:8px;">
+        <div style="font-size:12px;color:var(--info);background:rgba(59,130,246,0.1);padding:var(--small-spacing);border-radius:var(--small-spacing);margin-top:var(--small-spacing);">
           ℹ️ <strong>Kontrol:</strong> Sistem terpadu Pompa (R1-NC) + Valve (R2-NO)<br>
           • <strong>Manual ON/OFF:</strong> Kontrol langsung sistem irigasi<br>
           • <strong>Mode Otomatis:</strong> Berdasarkan sensor kelembaban tanah
         </div>
+
+        <!-- Mobile-specific responsive layout for control buttons -->
+        <style>
+          @media(max-width: 480px) {
+            .card [style*="display:grid;grid-template-columns:1fr 1fr"] {
+              grid-template-columns: 1fr !important;
+              gap: 10px !important;
+            }
+            .card [style*="grid-template-columns:1fr"] {
+              gap: 10px !important;
+            }
+          }
+        </style>
       </div>
       
-      <div class="card">
-        <h2 style="display:flex;align-items:center;gap:8px;color:#26D0CE;">🔧 Kontrol Relay Individual</h2>
+      <div class="card" style="margin-top:var(--section-spacing);">
+        <h2 style="display:flex;align-items:center;gap:var(--small-spacing);color:#26D0CE;">🔧 Kontrol Relay </h2>
         
-        <div style="display:grid;gap:12px;">
-          <div style="background:rgba(255,122,90,0.05);padding:16px;border-radius:12px;border-left:4px solid #FF7A5A;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:grid;gap:var(--inner-spacing);">
+          <div style="background:rgba(255,122,90,0.05);padding:var(--inner-spacing);border-radius:var(--border-radius);border-left:4px solid #FF7A5A;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--small-spacing);flex-wrap:wrap;gap:var(--small-spacing);">
               <span style="font-weight:600;"><span style="background:#FF7A5A;color:white;padding:2px 6px;border-radius:4px;font-size:12px;">R3</span> Relay 3 (Lampu 1)</span>
-              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;" id="l1">MATI</span>
+              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px var(--small-spacing);border-radius:var(--small-spacing);font-size:12px;font-weight:600;" id="l1">MATI</span>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--small-spacing);" class="mobile-stack">
               <button class="primary" style="background:#05C168;border-color:#059669;" onclick="action('/lamp1','on')">🟢 Hidupkan</button>
               <button class="danger" style="background:#EF4444;border-color:#DC2626;" onclick="action('/lamp1','off')">🔴 Matikan</button>
             </div>
           </div>
 
-          <div style="background:rgba(38,208,206,0.05);padding:16px;border-radius:12px;border-left:4px solid #26D0CE;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="background:rgba(38,208,206,0.05);padding:var(--inner-spacing);border-radius:var(--border-radius);border-left:4px solid #26D0CE;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--small-spacing);flex-wrap:wrap;gap:var(--small-spacing);">
               <span style="font-weight:600;"><span style="background:#26D0CE;color:white;padding:2px 6px;border-radius:4px;font-size:12px;">R4</span> Relay 4 (Lampu 2)</span>
-              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;" id="l2">MATI</span>
+              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px var(--small-spacing);border-radius:var(--small-spacing);font-size:12px;font-weight:600;" id="l2">MATI</span>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--small-spacing);" class="mobile-stack">
               <button class="primary" style="background:#05C168;border-color:#059669;" onclick="action('/lamp2','on')">🟢 Hidupkan</button>
               <button class="danger" style="background:#EF4444;border-color:#DC2626;" onclick="action('/lamp2','off')">🔴 Matikan</button>
             </div>
           </div>
         </div>
+
+        <!-- Mobile responsive styles for better touch interaction -->
+        <style>
+          @media(max-width: 480px) {
+            .mobile-stack {
+              grid-template-columns: 1fr !important;
+              gap: 10px !important;
+            }
+          }
+        </style>
 
         <div style="font-size:12px;color:var(--info);background:rgba(139,92,246,0.1);padding:8px;border-radius:8px;margin-top:12px;">
           ℹ️ <strong>Info:</strong> Relay 3 & 4 dikontrol secara independen, tidak terkait dengan sistem irigasi
