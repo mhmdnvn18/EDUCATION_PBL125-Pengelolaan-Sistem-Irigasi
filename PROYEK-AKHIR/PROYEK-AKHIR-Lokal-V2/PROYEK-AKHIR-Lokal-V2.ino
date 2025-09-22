@@ -131,6 +131,11 @@ void setup() {
     server.send(200, "application/json", json);
   });
   server.on("/water", HTTP_POST, []() { autoModeAir = false; setWaterSystem(server.arg("state") == "on"); server.send(200); });
+  server.on("/water-manual", HTTP_POST, []() { 
+    autoModeAir = false; 
+    setWaterSystem(server.arg("state") == "on"); 
+    server.send(200); 
+  });
   server.on("/auto",  HTTP_POST, []() { autoModeAir = (server.arg("state") == "on"); server.send(200); });
   server.on("/lamp1", HTTP_POST, []() { lampu1Status = (server.arg("state") == "on"); setRelay(relay3, lampu1Status); server.send(200); });
   server.on("/lamp2", HTTP_POST, []() { lampu2Status = (server.arg("state") == "on"); setRelay(relay4, lampu2Status); server.send(200); });

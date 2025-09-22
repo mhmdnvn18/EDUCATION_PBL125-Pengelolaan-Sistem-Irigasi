@@ -289,19 +289,19 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
       </div>
       
       <div class="card" id="card1">
-        <h2 style="display:flex;align-items:center;gap:8px;color:#4F8FE8;">⚙️ Kontrol Sistem Irigasi <span style="font-size:12px;color:var(--primary-blue);background:rgba(79,143,232,0.1);padding:4px 8px;border-radius:8px;">Channel 1</span></h2>
+        <h2 style="display:flex;align-items:center;gap:8px;color:#4F8FE8;">💧 Kontrol Sistem Irigasi Otomatis</h2>
         <div style="background:rgba(79,143,232,0.05);padding:16px;border-radius:12px;margin:12px 0;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-            <span style="font-size:20px;">1</span>
+            <span style="font-size:20px;">💧</span>
             <div>
-              <div style="font-weight:600;font-size:16px;">Channel 1 - Sistem Utama</div>
-              <div style="font-size:13px;color:var(--muted);">Relay 1 & 2 menyatu (Pompa + Selenoid)</div>
+              <div style="font-weight:600;font-size:16px;">Sistem Irigasi Utama</div>
+              <div style="font-size:13px;color:var(--muted);">Relay 1 (Pompa) + Relay 2 (Valve) bekerja bersamaan</div>
             </div>
           </div>
           
           <div style="display:flex;align-items:center;gap:12px;margin:12px 0;">
             <span style="font-size:16px;">⚡</span>
-            <span style="font-size:14px;color:var(--muted);">Status Pompa + Selenoid</span>
+            <span style="font-size:14px;color:var(--muted);">Status Sistem Irigasi</span>
             <span style="flex:1;text-align:right;font-weight:600;color:#ef4444;" id="p1">MATI</span>
           </div>
 
@@ -313,46 +313,56 @@ const char PAGE_INDEX[] PROGMEM = R"HTML(
                 <span class="badge ok" id="a1" style="background:#05C168;color:white;border:none;">OTOMATIS</span>
               </span>
             </div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px;text-align:center;">
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;text-align:center;" id="thresholdInfo">
               Nyalakan <40% | Matikan >65%
             </div>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">
-            <button class="primary" style="background:#05C168;border-color:#059669;" onclick="action('/water','on')">▶️ Nyalakan Sistem</button>
-            <button class="danger" style="background:#EF4444;border-color:#DC2626;" onclick="action('/water','off')">⏹️ Mode Manual</button>
+            <button class="primary" style="background:#05C168;border-color:#059669;" onclick="manualWaterControl('on')">🟢 Manual ON</button>
+            <button class="danger" style="background:#EF4444;border-color:#DC2626;" onclick="manualWaterControl('off')">🔴 Manual OFF</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;">
+            <button class="info" style="background:#3B82F6;border-color:#1D4ED8;" onclick="toggleAutoMode()">🔄 Aktifkan Mode Otomatis</button>
           </div>
         </div>
 
         <div style="font-size:12px;color:var(--info);background:rgba(59,130,246,0.1);padding:8px;border-radius:8px;margin-top:8px;">
-          ℹ️ <strong>Info:</strong> Relay 1+2 menyatu - Pompa dan Selenoid bekerja bersamaan
+          ℹ️ <strong>Kontrol:</strong> Sistem terpadu Pompa (R1-NC) + Valve (R2-NO)<br>
+          • <strong>Manual ON/OFF:</strong> Kontrol langsung sistem irigasi<br>
+          • <strong>Mode Otomatis:</strong> Berdasarkan sensor kelembaban tanah
         </div>
       </div>
       
       <div class="card">
-        <h2 style="display:flex;align-items:center;gap:8px;color:#26D0CE;">🎛️ Kontrol Relay Individual <span style="font-size:12px;color:var(--primary-teal);background:rgba(38,208,206,0.1);padding:4px 8px;border-radius:8px;">Channel 2</span></h2>
+        <h2 style="display:flex;align-items:center;gap:8px;color:#26D0CE;">🔧 Kontrol Relay Individual</h2>
         
         <div style="display:grid;gap:12px;">
           <div style="background:rgba(255,122,90,0.05);padding:16px;border-radius:12px;border-left:4px solid #FF7A5A;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <span style="font-weight:600;"><span style="background:#FF7A5A;color:white;padding:2px 6px;border-radius:4px;font-size:12px;">R3</span> Relay 3 (Pompa/Saklar)</span>
-              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;" id="l1">NON-AKTIF</span>
+              <span style="font-weight:600;"><span style="background:#FF7A5A;color:white;padding:2px 6px;border-radius:4px;font-size:12px;">R3</span> Relay 3 (Lampu 1)</span>
+              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;" id="l1">MATI</span>
             </div>
-            <button class="info" style="width:100%;background:#FF7A5A;border-color:#EA580C;color:white;" onclick="action('/lamp1','on')">Aktifkan R3</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button class="primary" style="background:#05C168;border-color:#059669;" onclick="action('/lamp1','on')">🟢 Hidupkan</button>
+              <button class="danger" style="background:#EF4444;border-color:#DC2626;" onclick="action('/lamp1','off')">🔴 Matikan</button>
+            </div>
           </div>
 
           <div style="background:rgba(38,208,206,0.05);padding:16px;border-radius:12px;border-left:4px solid #26D0CE;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <span style="font-weight:600;"><span style="background:#26D0CE;color:white;padding:2px 6px;border-radius:4px;font-size:12px;">R4</span> Relay 4 (Selenoid/Saklar)</span>
-              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;" id="l2">NON-AKTIF</span>
+              <span style="font-weight:600;"><span style="background:#26D0CE;color:white;padding:2px 6px;border-radius:4px;font-size:12px;">R4</span> Relay 4 (Lampu 2)</span>
+              <span style="background:rgba(239,68,68,0.2);color:#EF4444;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;" id="l2">MATI</span>
             </div>
-            <button class="info" style="width:100%;background:#26D0CE;border-color:#0891B2;color:white;" onclick="action('/lamp2','on')">Aktifkan R4</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button class="primary" style="background:#05C168;border-color:#059669;" onclick="action('/lamp2','on')">🟢 Hidupkan</button>
+              <button class="danger" style="background:#EF4444;border-color:#DC2626;" onclick="action('/lamp2','off')">🔴 Matikan</button>
+            </div>
           </div>
         </div>
 
         <div style="font-size:12px;color:var(--info);background:rgba(139,92,246,0.1);padding:8px;border-radius:8px;margin-top:12px;">
-          ℹ️ <strong>Info:</strong> Relay 3 & 4 adalah saklar terpisah untuk Channel 2<br>
-          • Dapat dikontrol secara independen • Tidak terkait dengan mode otomatis/manual
+          ℹ️ <strong>Info:</strong> Relay 3 & 4 dikontrol secara independen, tidak terkait dengan sistem irigasi
         </div>
       </div>
     </section>
@@ -380,9 +390,49 @@ async function refresh(){
     document.getElementById('progress1').style.width = (j.moist1 < 0) ? '0%' : j.moist1.toFixed(1) + '%';
     document.getElementById('progress2').style.width = (j.moist2 < 0) ? '0%' : j.moist2.toFixed(1) + '%';
     
-    // Update status sensor
-    document.getElementById('status1').textContent = (j.moist1 < 0) ? 'Offline' : 'Tidak Aktif';
-    document.getElementById('status2').textContent = (j.moist2 < 0) ? 'Offline' : 'Tidak Aktif';
+    // Update status sensor based on connection and moisture level
+    const status1 = document.getElementById('status1');
+    const status2 = document.getElementById('status2');
+    
+    if (j.moist1 < 0) {
+      status1.textContent = 'Terputus';
+      status1.style.background = 'rgba(239,68,68,0.2)';
+      status1.style.color = '#EF4444';
+    } else {
+      if (j.moist1 < 40) {
+        status1.textContent = 'Kering';
+        status1.style.background = 'rgba(255,122,90,0.2)';
+        status1.style.color = '#FF7A5A';
+      } else if (j.moist1 >= 65) {
+        status1.textContent = 'Basah';
+        status1.style.background = 'rgba(5,193,104,0.2)';
+        status1.style.color = '#05C168';
+      } else {
+        status1.textContent = 'Sedang';
+        status1.style.background = 'rgba(245,158,11,0.2)';
+        status1.style.color = '#F59E0B';
+      }
+    }
+    
+    if (j.moist2 < 0) {
+      status2.textContent = 'Terputus';
+      status2.style.background = 'rgba(239,68,68,0.2)';
+      status2.style.color = '#EF4444';
+    } else {
+      if (j.moist2 < 40) {
+        status2.textContent = 'Kering';
+        status2.style.background = 'rgba(255,122,90,0.2)';
+        status2.style.color = '#FF7A5A';
+      } else if (j.moist2 >= 65) {
+        status2.textContent = 'Basah';
+        status2.style.background = 'rgba(5,193,104,0.2)';
+        status2.style.color = '#05C168';
+      } else {
+        status2.textContent = 'Sedang';
+        status2.style.background = 'rgba(245,158,11,0.2)';
+        status2.style.color = '#F59E0B';
+      }
+    }
 
     // Update Card 1: Sistem Air
     const card1 = document.getElementById('card1');
@@ -406,16 +456,30 @@ async function refresh(){
       a1.style.border = 'none';
       card1.classList.remove('disabled');
       card1.querySelectorAll('button').forEach(b => b.disabled = false);
+      
+      // Update tombol mode otomatis berdasarkan status current
+      const autoButton = card1.querySelector('button[onclick*="toggleAutoMode"]');
+      if (autoButton) {
+        if (j.auto) {
+          autoButton.textContent = '⏸️ Mode Manual';
+          autoButton.style.background = '#F59E0B';
+          autoButton.style.borderColor = '#D97706';
+        } else {
+          autoButton.textContent = '🔄 Mode Otomatis';
+          autoButton.style.background = '#3B82F6';
+          autoButton.style.borderColor = '#1D4ED8';
+        }
+      }
     }
 
     // Update Relay individual
     const l1Status = document.getElementById('l1');
     const l2Status = document.getElementById('l2');
-    l1Status.textContent = j.lamp1 ? 'AKTIF' : 'NON-AKTIF';
+    l1Status.textContent = j.lamp1 ? 'HIDUP' : 'MATI';
     l1Status.style.background = j.lamp1 ? 'rgba(5,193,104,0.2)' : 'rgba(239,68,68,0.2)';
     l1Status.style.color = j.lamp1 ? '#05C168' : '#EF4444';
     
-    l2Status.textContent = j.lamp2 ? 'AKTIF' : 'NON-AKTIF';
+    l2Status.textContent = j.lamp2 ? 'HIDUP' : 'MATI';
     l2Status.style.background = j.lamp2 ? 'rgba(5,193,104,0.2)' : 'rgba(239,68,68,0.2)';
     l2Status.style.color = j.lamp2 ? '#05C168' : '#EF4444';
 
@@ -427,7 +491,7 @@ async function refresh(){
     lastUpdate.textContent = 'Last: ' + new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
 
     // ==========================================================
-    // BAGIAN PENTING: SINKRONISASI TAMPILAN SLIDER
+    // BAGIAN PENTING: SINKRONISASI TAMPILAN SLIDER & INFO THRESHOLD
     // ==========================================================
     // Perbarui nilai slider agar sesuai dengan data dari ESP32
     document.getElementById('onSlider').value = j.on_thresh;
@@ -436,6 +500,12 @@ async function refresh(){
     
     document.getElementById('offSlider').value = j.off_thresh;
     document.getElementById('offValue').textContent = j.off_thresh.toFixed(0) + '%';
+    
+    // Update info threshold pada sistem irigasi
+    const thresholdInfo = document.getElementById('thresholdInfo');
+    if (thresholdInfo) {
+      thresholdInfo.textContent = `Nyalakan <${j.on_thresh.toFixed(0)}% | Matikan >${j.off_thresh.toFixed(0)}%`;
+    }
     // ==========================================================
 
   }catch(e){ 
@@ -451,6 +521,31 @@ async function refresh(){
 
 async function action(path, state){
   await fetch(path + '?state=' + state, {method:'POST'});
+  setTimeout(refresh, 250);
+}
+
+async function manualWaterControl(state){
+  // Kontrol manual sistem irigasi - ON atau OFF
+  await fetch('/water-manual?state=' + state, {method:'POST'});
+  setTimeout(refresh, 250);
+}
+
+async function toggleWaterSystem(forceOn = false){
+  if (forceOn) {
+    // Aktifkan manual mode dan hidupkan sistem
+    await fetch('/auto?state=off', {method:'POST'});
+    await fetch('/water?state=on', {method:'POST'});
+  } else {
+    // Toggle sistem air
+    const currentStatus = document.getElementById('p1').textContent === 'HIDUP';
+    await fetch('/water?state=' + (currentStatus ? 'off' : 'on'), {method:'POST'});
+  }
+  setTimeout(refresh, 250);
+}
+
+async function toggleAutoMode(){
+  const currentAuto = document.getElementById('a1').textContent === 'OTOMATIS';
+  await fetch('/auto?state=' + (currentAuto ? 'off' : 'on'), {method:'POST'});
   setTimeout(refresh, 250);
 }
 
