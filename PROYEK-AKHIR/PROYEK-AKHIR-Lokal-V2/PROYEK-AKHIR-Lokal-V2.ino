@@ -24,14 +24,19 @@ IPAddress subnet(255, 255, 255, 0);
 #define relay4 19
 
 // ====== Konstanta & Variabel ======
+// --- Konstanta Kalibrasi Individual ---
+// GANTI NILAI INI DENGAN HASIL PENGUKURAN ANDA!
+const int SENSOR1_DRY = 3050; // Nilai ADC saat sensor 1 di udara
+const int SENSOR1_WET = 1100; // Nilai ADC saat sensor 1 di air
+const int SENSOR2_DRY = 2980; // Nilai ADC saat sensor 2 di udara
+const int SENSOR2_WET = 1050; // Nilai ADC saat sensor 2 di air
+
 const int ADC_DISCONNECTED_THRESHOLD = 4000;
-// --- PERUBAHAN 1: Mengubah konstanta menjadi true untuk logika active low ---
 const bool RELAY_ACTIVE_LOW = true;
 const int NUM_SENSORS = 2; // Menentukan jumlah sensor yang digunakan
 
 float onThreshold = 40.0;
 float offThreshold = 65.0;
-
 bool pompaStatus = false;
 bool lampu1Status = false;
 bool lampu2Status = false;
@@ -42,7 +47,6 @@ unsigned long lastLcdSwitch = 0;
 int lcdPage = 0;
 
 void setRelay(uint8_t pin, bool on) {
-  // Fungsi ini sudah benar dan akan bekerja sesuai dengan flag RELAY_ACTIVE_LOW
   if (RELAY_ACTIVE_LOW) {
     digitalWrite(pin, on ? LOW : HIGH);
   } else {
@@ -52,20 +56,27 @@ void setRelay(uint8_t pin, bool on) {
 
 void setWaterSystem(bool on) {
   pompaStatus = on;
-  // --- PERUBAHAN 2: Menyesuaikan logika Pompa (relay1) yang terhubung ke NC ---
-  // Untuk relay ACTIVE LOW yang terpasang di NC:
-  // - Untuk menyalakan pompa (memutus sirkuit relay), kirim HIGH.
-  // - Untuk mematikan pompa (menyambungkan sirkuit relay), kirim LOW.
+  // Logika Pompa (relay1) terhubung ke NC (Normally Closed)
   digitalWrite(relay1, on ? HIGH : LOW);
-  
-  // Relay 2 (Valve) terhubung ke NO, jadi bisa pakai fungsi setRelay biasa
+  // Relay 2 (Valve) terhubung ke NO (Normally Open)
   setRelay(relay2, on);
 }
 
 float getMoisture(int pin) {
   int adc = analogRead(pin);
   if (adc > ADC_DISCONNECTED_THRESHOLD) return -1.0f;
-  long pct = map(adc, 3000, 1000, 0, 100);
+
+  long pct;
+  
+  // Pilih konstanta kalibrasi yang sesuai berdasarkan pin
+  if (pin == sensor1) {
+    pct = map(adc, SENSOR1_DRY, SENSOR1_WET, 0, 100);
+  } else if (pin == sensor2) {
+    pct = map(adc, SENSOR2_DRY, SENSOR2_WET, 0, 100);
+  } else {
+    pct = 0; // Fallback jika pin tidak dikenal
+  }
+
   if (pct < 0) pct = 0;
   if (pct > 100) pct = 100;
   return (float)pct;
@@ -81,16 +92,14 @@ void setup() {
   preferences.end();
   Serial.println("Pengaturan ambang batas dimuat.");
 
-  pinMode(relay1, OUTPUT); pinMode(relay2, OUTPUT); pinMode(relay3, OUTPUT);
+  pinMode(relay1, OUTPUT); 
+  pinMode(relay2, OUTPUT); 
+  pinMode(relay3, OUTPUT);
   pinMode(relay4, OUTPUT);
 
   // Atur kondisi awal relay, pastikan semua mati
-  // --- PERUBAHAN 3: Menyesuaikan kondisi awal Pompa (relay1) ---
-  // Untuk mematikan pompa (NC), relay harus aktif. Sinyal LOW untuk active low.
-  digitalWrite(relay1, LOW); 
-  
-  // Untuk mematikan perangkat lain (NO), relay harus non-aktif. Sinyal HIGH untuk active low.
-  setRelay(relay2, false);  
+  digitalWrite(relay1, LOW); // Pompa (NC) mati jika sinyal LOW (relay aktif)
+  setRelay(relay2, false);  // Perangkat lain (NO) mati jika relay non-aktif
   setRelay(relay3, false);
   setRelay(relay4, false);
 
@@ -100,7 +109,7 @@ void setup() {
   lcd.setCursor(0, 1);
   lcd.print("Starting AP...");
   delay(2000);
-
+  
   if (!WiFi.softAPConfig(local_IP, gateway, subnet)) {
     Serial.println("Konfigurasi AP Gagal!");
     return;
@@ -115,6 +124,7 @@ void setup() {
   server.on("/", HTTP_GET, []() {
     server.send_P(200, "text/html; charset=utf-8", PAGE_INDEX);
   });
+
   server.on("/status", HTTP_GET, []() {
     float m1 = getMoisture(sensor1), m2 = getMoisture(sensor2);
     String json = "{";
@@ -130,34 +140,43 @@ void setup() {
     json += "}";
     server.send(200, "application/json", json);
   });
+
   server.on("/water", HTTP_POST, []() { 
     autoModeAir = false; 
     setWaterSystem(server.arg("state") == "on"); 
     Serial.println("Water system manual control: " + server.arg("state"));
     server.send(200); 
   });
+
   server.on("/auto",  HTTP_POST, []() { 
     autoModeAir = (server.arg("state") == "on"); 
     Serial.println("Auto mode: " + server.arg("state"));
     server.send(200); 
   });
-  server.on("/lamp1", HTTP_POST, []() { lampu1Status = (server.arg("state") == "on"); setRelay(relay3, lampu1Status); server.send(200); });
-  server.on("/lamp2", HTTP_POST, []() { lampu2Status = (server.arg("state") == "on"); setRelay(relay4, lampu2Status); server.send(200); });
+
+  server.on("/lamp1", HTTP_POST, []() { 
+    lampu1Status = (server.arg("state") == "on"); 
+    setRelay(relay3, lampu1Status); 
+    server.send(200); 
+  });
+
+  server.on("/lamp2", HTTP_POST, []() { 
+    lampu2Status = (server.arg("state") == "on"); 
+    setRelay(relay4, lampu2Status); 
+    server.send(200); 
+  });
+
   server.on("/settings", HTTP_POST, []() {
     if (server.hasArg("on") && server.hasArg("off")) {
       float newOnThreshold = server.arg("on").toFloat();
       float newOffThreshold = server.arg("off").toFloat();
       
-      // Validasi: onThreshold harus lebih kecil dari offThreshold
       if (newOnThreshold >= newOffThreshold) {
-        Serial.println("Error: onThreshold must be less than offThreshold");
         server.send(400, "text/plain", "Error: Batas ON harus lebih kecil dari batas OFF");
         return;
       }
       
-      // Validasi: nilai dalam range yang wajar (0-100)
       if (newOnThreshold < 0 || newOnThreshold > 100 || newOffThreshold < 0 || newOffThreshold > 100) {
-        Serial.println("Error: Threshold values must be between 0-100");
         server.send(400, "text/plain", "Error: Nilai harus antara 0-100");
         return;
       }
@@ -185,10 +204,11 @@ void loop() {
   float readings[NUM_SENSORS];
   readings[0] = getMoisture(sensor1); delay(10);
   readings[1] = getMoisture(sensor2); delay(10);
-
+  
   bool anySensorDry = false;
   bool allSensorsWet = true;
   int connectedSensors = 0;
+  
   for (int i = 0; i < NUM_SENSORS; i++) {
     if (readings[i] >= 0) {
       connectedSensors++;
@@ -208,7 +228,7 @@ void loop() {
     }
   }
 
-  // ====== BAGIAN UPDATE LCD BARU ======
+  // ====== Update Tampilan LCD ======
   if (millis() - lastLcdSwitch > 3000) {
     lcdPage = (lcdPage + 1) % 3;
     lastLcdSwitch = millis();
@@ -233,8 +253,7 @@ void loop() {
     case 2: // Tampilan Sensor 1 & 2
       char s1_val[4], s2_val[4];
       (readings[0] >= 0) ? sprintf(s1_val, "%3d", (int)readings[0]) : sprintf(s1_val, " --");
-      (readings[1] >= 0) ?
-      sprintf(s2_val, "%3d", (int)readings[1]) : sprintf(s2_val, " --");
+      (readings[1] >= 0) ? sprintf(s2_val, "%3d", (int)readings[1]) : sprintf(s2_val, " --");
       sprintf(tempStr, "S1:%s%% S2:%s%%", s1_val, s2_val);
       break;
   }
